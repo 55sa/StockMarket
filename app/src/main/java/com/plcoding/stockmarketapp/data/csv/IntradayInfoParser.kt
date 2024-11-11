@@ -1,5 +1,7 @@
 package com.plcoding.stockmarketapp.data.csv
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.mapper.toIntradayInfo
 import com.plcoding.stockmarketapp.data.remote.dto.IntradayInfoDto
@@ -17,6 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class IntradayInfoParser @Inject constructor(): CSVParser<IntradayInfo> {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun parse(stream: InputStream): List<IntradayInfo> {
         val csvReader = CSVReader(InputStreamReader(stream))
         return withContext(Dispatchers.IO) {

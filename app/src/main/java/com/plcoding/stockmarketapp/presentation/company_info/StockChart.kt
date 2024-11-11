@@ -1,6 +1,8 @@
 package com.plcoding.stockmarketapp.presentation.company_info
 
 import android.graphics.Paint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -14,6 +16,7 @@ import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import kotlin.math.round
 import kotlin.math.roundToInt
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StockChart(
     infos: List<IntradayInfo> = emptyList(),

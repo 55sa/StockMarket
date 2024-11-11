@@ -1,5 +1,7 @@
 package com.plcoding.stockmarketapp.presentation.company_info
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.CircularProgressIndicator
@@ -20,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.stockmarketapp.ui.theme.DarkBlue
 import com.ramcosta.composedestinations.annotation.Destination
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Destination
 fun CompanyInfoScreen(
