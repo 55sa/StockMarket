@@ -3,6 +3,7 @@ package com.plcoding.stockmarketapp.di
 import android.app.Application
 import androidx.room.Room
 import com.plcoding.stockmarketapp.data.local.StockDatabase
+import com.plcoding.stockmarketapp.data.local.StockDatabase.Companion.MIGRATION_1_2
 import com.plcoding.stockmarketapp.data.remote.StockApi
 import dagger.Module
 import dagger.Provides
@@ -38,6 +39,6 @@ object AppModule {
             app,
             StockDatabase::class.java,
             "stockdb.db"
-        ).build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 }

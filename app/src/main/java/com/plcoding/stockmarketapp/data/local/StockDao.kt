@@ -25,4 +25,7 @@ interface StockDao {
         """
     )
     suspend fun searchCompanyListing(query: String): List<CompanyListingEntity>
+
+    @Query("SELECT * FROM companylistingentity WHERE symbol = :symbol")
+    suspend fun findBySymbol(symbol: String): CompanyListingEntity
 }

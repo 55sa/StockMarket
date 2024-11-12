@@ -3,7 +3,7 @@ package com.plcoding.stockmarketapp.data.local
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity
+@Entity(tableName = "companylistingentity")
 data class CompanyListingEntity(
     val name: String,
     val symbol: String,
