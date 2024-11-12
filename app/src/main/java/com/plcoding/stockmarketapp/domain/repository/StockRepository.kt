@@ -20,4 +20,7 @@ interface StockRepository {
     suspend fun getCompanyInfo(
         symbol: String
     ): Resource<CompanyInfo>
+
+
+    suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>>
 }

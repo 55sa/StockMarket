@@ -30,6 +30,7 @@ class StockRepositoryImpl @Inject constructor(
 ): StockRepository {
 
     private val dao = db.stockdao
+    private val watchDao = db.watchdao
 
     override suspend fun getCompanyListings(
         fetchFromRemote: Boolean,
@@ -108,6 +109,17 @@ class StockRepositoryImpl @Inject constructor(
             Resource.Error(
                 message = "Couldn't load company info"
             )
+        }
+    }
+
+    override suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>> {
+        return try {
+            val watchlistWithDetails = watchDao.getWatchlistWithDetails()
+            val mappedResult = watchlistWithDetails.map { it.toCompanyListing() }
+            Resource.Success(mappedResult)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error("Failed to load watchlist details")
         }
     }
 }

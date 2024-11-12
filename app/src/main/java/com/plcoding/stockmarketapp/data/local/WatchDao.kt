@@ -9,7 +9,7 @@ import androidx.room.Query
 interface WatchDao {
     // Insert a single symbol into the database
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSymbol(symbol: WatchlistEntity)
+    suspend fun insertwatch(entity: WatchlistEntity)
 
     // Insert multiple symbols into the database
     @Insert(onConflict = OnConflictStrategy.REPLACE)

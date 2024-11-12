@@ -30,3 +30,4 @@ fun CompanyInfoDto.toCompanyInfo(): CompanyInfo {
         industry = industry ?: ""
     )
 }
+
