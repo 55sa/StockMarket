@@ -21,16 +21,16 @@ fun WatchListScreen(
 ) {
     val state = viewModel.state
     Column(modifier = Modifier.fillMaxSize()) {
-        // 显示标题
+
         Text(
-            text = "我的关注列表",
+            text = "WatchList",
             style = MaterialTheme.typography.h6,
             modifier = Modifier.padding(16.dp)
         )
 
-        // 显示加载动画
 
-            // 显示关注列表内容
+
+
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(state.companies) { company ->
                     CompanyItem(

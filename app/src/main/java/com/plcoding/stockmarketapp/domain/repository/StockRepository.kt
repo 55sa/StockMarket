@@ -23,4 +23,8 @@ interface StockRepository {
 
 
     suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>>
+
+    suspend fun isDatabaseInitialized(): Boolean
+
+    suspend fun initializeDatabaseFromRemote(): Resource<Unit>
 }

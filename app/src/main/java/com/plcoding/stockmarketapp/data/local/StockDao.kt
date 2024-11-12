@@ -7,6 +7,8 @@ import androidx.room.Query
 
 @Dao
 interface StockDao {
+    @Query("SELECT COUNT(*) FROM companylistingentity")
+    suspend fun getCompanyListingCount(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCompanyListings(

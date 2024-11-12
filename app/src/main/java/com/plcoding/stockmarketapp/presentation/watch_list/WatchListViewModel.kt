@@ -14,30 +14,77 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WatchListViewModel @Inject constructor(
-    private val repository: StockRepository
+    private val repository: StockRepository,
 ) : ViewModel() {
 
     var state by mutableStateOf(CompanyListingsState())
 
     init {
+        viewModelScope.launch {
+            initializeData()
+        }
+    }
+
+    private suspend fun initializeData() {
+
+        val isDatabaseInitialized = repository.isDatabaseInitialized()
+        if (!isDatabaseInitialized) {
+            initializeDatabase()
+        }
+
+
         loadWatchlist()
+    }
+
+    private suspend fun initializeDatabase() {
+        state = state.copy(isLoading = true)
+        val result = repository.initializeDatabaseFromRemote()
+        when (result) {
+            is Resource.Success -> {
+
+                state = state.copy(isLoading = false)
+            }
+            is Resource.Error -> {
+
+                state = state.copy(
+                    isLoading = false
+
+                )
+            }
+        }
     }
 
     private fun loadWatchlist() {
         viewModelScope.launch {
             state = state.copy(isLoading = true)
-            val result = repository.getWatchlistWithDetails()
-            when (result) {
+            when (val result = repository.getWatchlistWithDetails()) {
                 is Resource.Success -> {
                     result.data?.let { companies ->
                         state = state.copy(companies = companies, isLoading = false)
                     }
                 }
-                is Resource.Error -> Unit
+                is Resource.Error -> {
+                    state = state.copy(
+                        isLoading = false
+
+                    )
+                }
                 is Resource.Loading -> {
                     state = state.copy(isLoading = result.isLoading)
                 }
             }
         }
     }
+
+
+    private fun getCompanyListings(
+        query: String = state.searchQuery.lowercase(),
+        fetchFromRemote: Boolean = false
+    ) {
+        viewModelScope.launch {
+            repository.getCompanyListings(fetchFromRemote, query)
+        }
+    }
 }
+
+

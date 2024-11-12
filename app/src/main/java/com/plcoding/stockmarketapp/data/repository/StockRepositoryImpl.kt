@@ -122,4 +122,25 @@ class StockRepositoryImpl @Inject constructor(
             Resource.Error("Failed to load watchlist details")
         }
     }
+
+    override suspend fun isDatabaseInitialized(): Boolean {
+        return dao.getCompanyListingCount() > 0
+    }
+
+    override suspend fun initializeDatabaseFromRemote(): Resource<Unit> {
+        return try {
+            val response = api.getListings()
+            val parsedListings = companyListingsParser.parse(response.byteStream())
+
+            // Save to database
+            dao.clearCompanyListings()
+            dao.insertCompanyListings(parsedListings.map { it.toCompanyListingEntity() })
+
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error("Failed to initialize database: ${e.message}")
+        }
+    }
+
 }
