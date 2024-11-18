@@ -165,7 +165,7 @@ class StockRepositoryImpl @Inject constructor(
         """.trimIndent()
 
             val gptRequest = GptRequest(
-                model = "gpt-3.5-turbo", // Ensure the model is included
+                model = "gpt-3.5-turbo", // Ensure tshe model is included
                 messages = listOf(Message(role = "user", content = prompt)),
                 max_tokens = 200,
                 temperature = 0.7
