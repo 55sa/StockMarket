@@ -1,5 +1,7 @@
 package com.plcoding.stockmarketapp.data.repository
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.csv.CSVParser
 import com.plcoding.stockmarketapp.data.csv.CompanyListingsParser
@@ -149,11 +151,12 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String> {
         return try {
             // Build the GPT request
             val tradesSummary = tradeInfoList.joinToString("\n") {
-                "Timestamp: ${it.date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}, Close: ${it.close}"
+                "Timestamp: ${it.date}, Close: ${it.close}"
             }
             val prompt = """
             You are a financial analyst. Analyze the following intraday trading data and provide insights, such as patterns, anomalies, or trends:
