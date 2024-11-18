@@ -17,7 +17,7 @@ import javax.inject.Inject
 class CompanyInfoViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val repository: StockRepository
-): ViewModel() {
+) : ViewModel() {
 
     var state by mutableStateOf(CompanyInfoState())
 
@@ -25,39 +25,38 @@ class CompanyInfoViewModel @Inject constructor(
         viewModelScope.launch {
             val symbol = savedStateHandle.get<String>("symbol") ?: return@launch
             state = state.copy(isLoading = true)
-            val companyInfoResult = async { repository.getCompanyInfo(symbol) }
-            val intradayInfoResult = async { repository.getIntradayInfo(symbol) }
-            when(val result = companyInfoResult.await()) {
+
+            val companyInfoDeferred = async { repository.getCompanyInfo(symbol) }
+            val intradayInfoDeferred = async { repository.getIntradayInfo(symbol) }
+
+            // Fetch company info
+            when (val result = companyInfoDeferred.await()) {
                 is Resource.Success -> {
-                    state = state.copy(
-                        company = result.data,
-                        isLoading = false,
-                        error = null
-                    )
+                    state = state.copy(company = result.data, error = null)
                 }
                 is Resource.Error -> {
-                    state = state.copy(
-                        isLoading = false,
-                        error = result.message,
-                        company = null
-                    )
+                    state = state.copy(error = result.message, isLoading = false)
                 }
                 else -> Unit
             }
-            when(val result = intradayInfoResult.await()) {
+
+            // Fetch intraday info and analyze with GPT
+            when (val result = intradayInfoDeferred.await()) {
                 is Resource.Success -> {
-                    state = state.copy(
-                        stockInfos = result.data ?: emptyList(),
-                        isLoading = false,
-                        error = null
-                    )
+                    state = state.copy(stockInfos = result.data ?: emptyList(), error = null)
+
+                    val gptAnalysisDeferred = async { repository.analyzeIntradayInfoWithGpt(state.stockInfos) }
+                    when (val gptResult = gptAnalysisDeferred.await()) {
+                        is Resource.Success -> {
+                            state = state.copy(gptmesg = gptResult.data, isLoading = false)
+                        }
+                        is Resource.Error -> {
+                            state = state.copy(error = gptResult.message, isLoading = false)
+                        }
+                    }
                 }
                 is Resource.Error -> {
-                    state = state.copy(
-                        isLoading = false,
-                        error = result.message,
-                        company = null
-                    )
+                    state = state.copy(error = result.message, isLoading = false)
                 }
                 else -> Unit
             }

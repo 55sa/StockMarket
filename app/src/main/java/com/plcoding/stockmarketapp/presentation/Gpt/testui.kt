@@ -13,7 +13,7 @@ import com.plcoding.stockmarketapp.util.Resource
 import com.ramcosta.composedestinations.annotation.Destination
 
 @Composable
-@Destination(start = true)
+@Destination
 fun GptAnalysisScreen(viewModel: GptViewModel = hiltViewModel()) {
     val gptResponse by viewModel.gptResponse.collectAsState()
 
