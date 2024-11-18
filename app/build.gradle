@@ -16,6 +16,7 @@ kotlin {
             kotlin.srcDir("build/generated/ksp/release/kotlin")
         }
     }
+
 }
 
 android {
@@ -32,6 +33,10 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        Properties properties=new Properties()
+        properties.load(project.rootProject.file("local.properties").newDataInputStream())
+
+        buildConfigField "String", "OPENAI_API_KEY", "\"${properties.getProperty("OPENAI_API_KEY")}\""
     }
 
     buildTypes {
