@@ -27,4 +27,6 @@ interface StockRepository {
     suspend fun isDatabaseInitialized(): Boolean
 
     suspend fun initializeDatabaseFromRemote(): Resource<Unit>
+
+    suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String>
 }

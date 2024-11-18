@@ -15,7 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 
 @Composable
-@Destination(start = true)
+
 fun WatchListScreen(
     viewModel: WatchListViewModel = hiltViewModel()
 ) {
