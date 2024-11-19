@@ -25,7 +25,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 
-
 @Composable
 fun HomePageScreen() {
     var searchQuery by remember { mutableStateOf("") }
@@ -91,16 +90,7 @@ fun HomePageScreen() {
                     .background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                        .background(Color.LightGray),
-                    contentAlignment = Alignment.Center
-                ) {
-                    StockLineChart()
-                }
-
+                StockLineChart()
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -139,37 +129,37 @@ fun HomePageScreen() {
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Lot", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("186.26 M", fontWeight = FontWeight.Bold)
+                        Text("186.26 M", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Value", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("9.88 T", fontWeight = FontWeight.Bold)
+                        Text("9.88 T", color = Color.Green, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Freq", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("1.10 M", fontWeight = FontWeight.Bold)
+                        Text("1.10 M", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "Watchlist",
                 style = MaterialTheme.typography.h6,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(vertical = 5.dp)
             )
             LazyColumn {
                 items(
                     listOf(
-                        Pair("Tesla", R.drawable.tesla_logo),
-                        Pair("Amazon", R.drawable.amazon_logo),
-                        Pair("Apple", R.drawable.apple_logo)
+                        Pair("TSLA", R.drawable.tesla_logo),
+                        Pair("AMZN", R.drawable.amazon_logo),
+                        Pair("AAPL", R.drawable.apple_logo)
                     )
                 ) { pair ->
                     val (name, logoRes) = pair
@@ -193,7 +183,7 @@ fun WatchlistItem(name: String, price: String, change: String, color: Color, log
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -202,13 +192,18 @@ fun WatchlistItem(name: String, price: String, change: String, color: Color, log
                 painter = logo,
                 contentDescription = "$name logo",
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(30.dp)
                     .padding(end = 8.dp)
             )
             Column {
                 Text(text = name, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "Company",
+                    text = when (name) {
+                        "TSLA" -> "Tesla Inc."
+                        "AMZN" -> "Amazon.com, Inc."
+                        "AAPL" -> "Apple Inc."
+                        else -> "Company"
+                    },
                     style = MaterialTheme.typography.body2,
                     color = Color.Gray
                 )
@@ -230,24 +225,25 @@ fun BottomNavigationBar() {
     BottomNavigation(
         backgroundColor = Color.White,
         contentColor = Color.Black
+
     ) {
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_home), contentDescription = "Home") },
+            icon = { Icon(painterResource(id = R.drawable.ic_home), contentDescription = "Home", modifier = Modifier.size(25.dp)) },
             selected = true,
             onClick = {}
         )
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_folder), contentDescription = "Folder") },
+            icon = { Icon(painterResource(id = R.drawable.ic_folder), contentDescription = "Folder", modifier = Modifier.size(25.dp)) },
             selected = false,
             onClick = {}
         )
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_notifications), contentDescription = "Notifications") },
+            icon = { Icon(painterResource(id = R.drawable.ic_notifications), contentDescription = "Notifications", modifier = Modifier.size(25.dp)) },
             selected = false,
             onClick = {}
         )
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_profile), contentDescription = "Profile") },
+            icon = { Icon(painterResource(id = R.drawable.ic_profile), contentDescription = "Profile", modifier = Modifier.size(25.dp)) },
             selected = false,
             onClick = {}
         )
