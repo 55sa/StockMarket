@@ -126,20 +126,16 @@ fun HomePageScreen() {
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.weight(1f)
                 ) {
+
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Lot", fontWeight = FontWeight.Bold)
+                        Text("Close", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("186.26 M", color = Color.Red, fontWeight = FontWeight.Bold)
+                        Text("7,340.60", color = Color.Green, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Value", fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("9.88 T", color = Color.Green, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Freq", fontWeight = FontWeight.Bold)
+                        Text("Volume", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("1.10 M", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
@@ -254,6 +250,7 @@ fun BottomNavigationBar() {
 fun StockLineChart() {
     val stockPrices = listOf(350f, 460f, 984f, 3451f, 327f, 689f, 214f, 200f, 500f, 7050f,
                              7100f, 7020f, 660f, 7005f, 7105f, 2120f, 7080f, )
+
     val maxPrice = stockPrices.maxOrNull() ?: 0f
     val minPrice = stockPrices.minOrNull() ?: 0f
 
