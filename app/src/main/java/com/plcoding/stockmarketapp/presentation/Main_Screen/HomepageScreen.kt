@@ -237,6 +237,11 @@ fun BottomNavigationBar() {
             onClick = {}
         )
         BottomNavigationItem(
+            icon = { Icon(painterResource(id = R.drawable.ic_folder), contentDescription = "Folder") },
+            selected = false,
+            onClick = {}
+        )
+        BottomNavigationItem(
             icon = { Icon(painterResource(id = R.drawable.ic_notifications), contentDescription = "Notifications") },
             selected = false,
             onClick = {}
@@ -251,7 +256,8 @@ fun BottomNavigationBar() {
 
 @Composable
 fun StockLineChart() {
-    val stockPrices = listOf(7000f, 7050f, 7100f, 7020f, 7060f, 7005f, 7105f, 7120f, 7080f)
+    val stockPrices = listOf(350f, 460f, 984f, 3451f, 327f, 689f, 214f, 200f, 500f, 7050f,
+                             7100f, 7020f, 660f, 7005f, 7105f, 2120f, 7080f, )
     val maxPrice = stockPrices.maxOrNull() ?: 0f
     val minPrice = stockPrices.minOrNull() ?: 0f
 
