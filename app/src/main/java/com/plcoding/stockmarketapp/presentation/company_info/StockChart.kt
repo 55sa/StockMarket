@@ -1,117 +1,97 @@
 package com.plcoding.stockmarketapp.presentation.company_info
 
-import android.graphics.Paint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
-import kotlin.math.round
 import kotlin.math.roundToInt
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StockChart(
     infos: List<IntradayInfo> = emptyList(),
-    modifier: Modifier = Modifier,
-    graphColor: Color = Color.Green
+    modifier: Modifier = Modifier
 ) {
-    val spacing = 100f
-    val transparentGraphColor = remember {
-        graphColor.copy(alpha = 0.5f)
+    val graphColor = if (infos.isNotEmpty() && infos.last().close >= infos.first().close) {
+        Color.Green
+    } else {
+        Color.Red
     }
-    val upperValue = remember(infos) {
-        (infos.maxOfOrNull { it.close }?.plus(1))?.roundToInt() ?: 0
-    }
-    val lowerValue = remember(infos) {
-        infos.minOfOrNull { it.close }?.toInt() ?: 0
-    }
-    val density = LocalDensity.current
-    val textPaint = remember(density) {
-        Paint().apply {
-            color = android.graphics.Color.WHITE
-            textAlign = Paint.Align.CENTER
-            textSize = density.run { 12.sp.toPx() }
-        }
-    }
-    Canvas(modifier = modifier) {
-        val spacePerHour = (size.width - spacing) / infos.size
-        (0 until infos.size - 1 step 2).forEach { i ->
-            val info = infos[i]
-            val hour = info.date.hour
-            drawContext.canvas.nativeCanvas.apply {
-                drawText(
-                    hour.toString(),
-                    spacing + i * spacePerHour,
-                    size.height - 5,
-                    textPaint
-                )
-            }
-        }
-        val priceStep = (upperValue - lowerValue) / 5f
-        (0..4).forEach { i ->
-            drawContext.canvas.nativeCanvas.apply {
-                drawText(
-                    round(lowerValue + priceStep * i).toString(),
-                    30f,
-                    size.height - spacing - i * size.height / 5f,
-                    textPaint
-                )
-            }
-        }
-        var lastX = 0f
-        val strokePath = Path().apply {
-            val height = size.height
-            for(i in infos.indices) {
-                val info = infos[i]
-                val nextInfo = infos.getOrNull(i + 1) ?: infos.last()
-                val leftRatio = (info.close - lowerValue) / (upperValue - lowerValue)
-                val rightRatio = (nextInfo.close - lowerValue) / (upperValue - lowerValue)
 
-                val x1 = spacing + i * spacePerHour
-                val y1 = height - spacing - (leftRatio * height).toFloat()
-                val x2 = spacing + (i + 1) * spacePerHour
-                val y2 = height - spacing - (rightRatio * height).toFloat()
-                if(i == 0) {
-                    moveTo(x1, y1)
+    val upperBound = (infos.maxOfOrNull { it.close }?.roundToInt() ?: 0) + 1
+    val lowerBound = (infos.minOfOrNull { it.close }?.roundToInt() ?: 0) - 1
+
+    Canvas(modifier = modifier) {
+        val spacing = 20.dp.toPx()
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+        val pointSpacing = (canvasWidth - spacing) / infos.size
+
+        // Draw horizontal grid lines and labels
+        val textPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 12.sp.toPx()
+        }
+        val priceSteps = (upperBound - lowerBound) / 5
+        for (i in 0..4) {
+            val y = canvasHeight - (canvasHeight / 4f) * i
+            drawLine(
+                color = Color.Gray,
+                start = Offset(spacing, y),
+                end = Offset(canvasWidth, y),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawContext.canvas.nativeCanvas.drawText(
+                (lowerBound + priceSteps * i).toString(),
+                0f,
+                y,
+                textPaint
+            )
+        }
+
+        // Create the graph path
+        val graphPath = Path().apply {
+            infos.forEachIndexed { index, info ->
+                val x = spacing + index * pointSpacing
+                val y = canvasHeight - ((info.close - lowerBound) / (upperBound - lowerBound) * (canvasHeight - spacing)).toFloat()
+                if (index == 0) {
+                    moveTo(x, y)
+                } else {
+                    lineTo(x, y)
                 }
-                lastX = (x1 + x2) / 2f
-                quadraticBezierTo(
-                    x1, y1, lastX, (y1 + y2) / 2f
-                )
             }
         }
-        val fillPath = android.graphics.Path(strokePath.asAndroidPath())
-            .asComposePath()
-            .apply {
-                lineTo(lastX, size.height - spacing)
-                lineTo(spacing, size.height - spacing)
-                close()
-            }
+
+        // Create the fill path
+        val fillPath = Path().apply {
+            addPath(graphPath)
+            lineTo(canvasWidth, canvasHeight)
+            lineTo(spacing, canvasHeight)
+            close()
+        }
+
+        // Draw the fill area
         drawPath(
             path = fillPath,
             brush = Brush.verticalGradient(
-                colors = listOf(
-                    transparentGraphColor,
-                    Color.Transparent
-                ),
-                endY = size.height - spacing
+                colors = listOf(graphColor.copy(alpha = 0.4f), Color.Transparent),
+                endY = canvasHeight
             )
         )
+
+        // Draw the graph line
         drawPath(
-            path = strokePath,
+            path = graphPath,
             color = graphColor,
-            style = Stroke(
-                width = 3.dp.toPx(),
-                cap = StrokeCap.Round
-            )
+            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
         )
     }
 }
