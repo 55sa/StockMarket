@@ -21,8 +21,9 @@ import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
 import com.plcoding.stockmarketapp.presentation.company_info.StockChart
 import com.plcoding.stockmarketapp.util.Resource
 import com.ramcosta.composedestinations.annotation.Destination
+import androidx.compose.ui.tooling.preview.Preview
 
-@Destination(start = true)
+ @Destination(start = true)
 @Composable
 fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
     var searchQuery by remember { mutableStateOf("") }
@@ -180,4 +181,17 @@ fun BottomNavigationBar(modifier: Modifier = Modifier) {
             onClick = {}
         )
     }
+}
+
+@Destination
+@Composable
+fun HomeScreen() {
+    HomePageScreen()
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun HomePageScreenPreview() {
+    HomePageScreen()
 }
