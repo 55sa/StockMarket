@@ -1,35 +1,43 @@
 package com.plcoding.stockmarketapp.presentation.mainscreen
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.rememberAsyncImagePainter
 import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
-import com.plcoding.stockmarketapp.presentation.company_info.StockChart
 import com.plcoding.stockmarketapp.util.Resource
+import androidx.compose.ui.graphics.Path
 import com.ramcosta.composedestinations.annotation.Destination
-import androidx.compose.ui.tooling.preview.Preview
 
- @Destination(start = true)
+
 @Composable
 fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedCompany by remember { mutableStateOf<CompanyListing?>(null) }
 
-    val nasdaqData by viewModel.nasdaqData.collectAsState()
     val watchlist by viewModel.watchlist.collectAsState()
+    val intradayData by viewModel.nasdaqData.collectAsState()
+
+    val randomCompany = (watchlist as? Resource.Success<List<CompanyListing>>)?.data?.randomOrNull()
+
+    LaunchedEffect(randomCompany) {
+        randomCompany?.let { viewModel.loadNasdaqData(it.symbol) }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -49,6 +57,7 @@ fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
             BasicTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
+                textStyle = LocalTextStyle.current.copy(color = Color.White),
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.Gray.copy(alpha = 0.2f), shape = MaterialTheme.shapes.small)
@@ -63,67 +72,71 @@ fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nasdaq Chart Section
-            Text(
-                text = "TESLA",
-                style = MaterialTheme.typography.h6,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            // Random Stock Section
+            randomCompany?.let { company ->
+                Text(
+                    text = company.name,
+                    style = MaterialTheme.typography.h6,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
 
-            when (nasdaqData) {
-                is Resource.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                is Resource.Success -> {
-                    val data = (nasdaqData as Resource.Success<List<IntradayInfo>>).data
-                    if (data != null) {
-                        if (data.isNotEmpty()) {
-                            StockChart(
-                                infos = data,
+                when (intradayData) {
+                    is Resource.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    is Resource.Success -> {
+                        val data = (intradayData as Resource.Success<List<IntradayInfo>>).data
+                        if (!data.isNullOrEmpty()) {
+                            StockLineChart(
+                                stockPrices = data.map { it.close },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(200.dp)
                             )
                         } else {
                             Text(
-                                text = "No Nasdaq data available",
+                                text = "No data available for ${company.name}",
                                 color = Color.Red,
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             )
                         }
                     }
+                    is Resource.Error -> Text(
+                        text = "Failed to load data for ${company.name}",
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
-                is Resource.Error -> Text(
-                    text = "Failed to load Nasdaq data",
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Watchlist Section
             Text(
-                text = "Watchlist",
+                text = if (searchQuery.isEmpty()) "Watchlist" else "Search Results",
                 style = MaterialTheme.typography.h6,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            when (watchlist) {
-                is Resource.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                is Resource.Success<*> -> {
-                    val data = (watchlist as? Resource.Success<List<CompanyListing>>)?.data ?: emptyList()
-                    LazyColumn {
-                        items(data) { company ->
-                            WatchlistItem(name = company.name)
-                        }
+            LazyColumn {
+                val companies = (watchlist as? Resource.Success<List<CompanyListing>>)?.data ?: emptyList()
+
+                val filteredCompanies = if (searchQuery.isEmpty()) companies else {
+                    companies.filter {
+                        it.name.contains(searchQuery, ignoreCase = true) || it.symbol.contains(searchQuery, ignoreCase = true)
                     }
                 }
-                is Resource.Error -> Text(
-                    text = "Failed to load watchlist",
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+
+                items(filteredCompanies) { company ->
+                    WatchlistItem(
+                        name = company.name,
+                        logoUrl = viewModel.getCompanyLogoUrl(company.symbol),
+                        onClick = {
+                            selectedCompany = company
+                            viewModel.loadNasdaqData(company.symbol)
+                        }
+                    )
+                }
             }
         }
 
@@ -133,57 +146,87 @@ fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         )
+
     }
 }
 
 @Composable
-fun WatchlistItem(name: String) {
+fun WatchlistItem(name: String, logoUrl: String?, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Image(
+            painter = rememberAsyncImagePainter(logoUrl ?: ""),
+            contentDescription = "$name logo",
+            modifier = Modifier
+                .size(40.dp)
+                .padding(end = 8.dp)
+        )
         Text(
             text = name,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 8.dp)
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
 @Composable
-fun BottomNavigationBar(modifier: Modifier = Modifier) {
+fun StockLineChart(stockPrices: List<Double>, modifier: Modifier = Modifier) {
+    val maxPrice = stockPrices.maxOrNull() ?: 1.0
+    val minPrice = stockPrices.minOrNull() ?: 0.0
+
+    Canvas(modifier = modifier) {
+        val spacing = size.width / (stockPrices.size - 1)
+
+        val path = Path().apply {
+            stockPrices.forEachIndexed { index, price ->
+                val x = index * spacing
+                val y = size.height - ((price - minPrice) / (maxPrice - minPrice) * size.height).toFloat()
+                if (index == 0) moveTo(x, y) else lineTo(x, y)
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = Color.Blue,
+            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+        )
+    }
+}
+
+@Composable
+fun BottomNavigationBar(modifier: Modifier) {
     BottomNavigation(
         backgroundColor = Color.White,
-        contentColor = Color.Black,
-        modifier = modifier
+        contentColor = Color.Blue
     ) {
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_home), contentDescription = "Home", modifier = Modifier.size(25.dp)) },
+            icon = { Icon(painterResource(id = R.drawable.ic_home), contentDescription = "Home", modifier = Modifier.size(20.dp)) },
             selected = true,
             onClick = {}
         )
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_folder), contentDescription = "Folder", modifier = Modifier.size(25.dp)) },
+            icon = { Icon(painterResource(id = R.drawable.ic_folder), contentDescription = "Folder", modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = {}
         )
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_notifications), contentDescription = "Notifications", modifier = Modifier.size(25.dp)) },
+            icon = { Icon(painterResource(id = R.drawable.ic_notifications), contentDescription = "Notifications", modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = {}
         )
         BottomNavigationItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_profile), contentDescription = "Profile", modifier = Modifier.size(25.dp)) },
+            icon = { Icon(painterResource(id = R.drawable.ic_profile), contentDescription = "Profile", modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = {}
         )
     }
 }
 
-@Destination
+@Destination(start = true)
 @Composable
 fun HomeScreen() {
     HomePageScreen()
