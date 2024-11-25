@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyInfoScreenDestination
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -30,6 +31,7 @@ fun CompanyListingsScreen(
         isRefreshing = viewModel.state.isRefreshing
     )
     val state = viewModel.state
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {

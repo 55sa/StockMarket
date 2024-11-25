@@ -6,29 +6,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Center
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.plcoding.stockmarketapp.ui.theme.DarkBlue
+import com.plcoding.stockmarketapp.R
+import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.ramcosta.composedestinations.annotation.Destination
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Destination
 fun CompanyInfoScreen(
     symbol: String,
     viewModel: CompanyInfoViewModel = hiltViewModel()
+
 ) {
     val state = viewModel.state
 
@@ -44,7 +43,31 @@ fun CompanyInfoScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(6.dp),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    IconButton(onClick = {
+                        viewModel.addToWatchList(symbol)
+                    }) {
+                        Icon(
+                            painter = painterResource(android.R.drawable.ic_menu_add), // Use system icon
+                            contentDescription = "Add to Watchlist",
+                            modifier = Modifier.size(24.dp), // Adjust size for better UI fit
+                            tint = MaterialTheme.colors.onBackground // Optional tint color
+                        )
+                    }
+                }
+
+
+
+
+
                 state.company?.let { company ->
+                    // Company Details
                     Text(
                         text = company.name,
                         fontWeight = FontWeight.Bold,
@@ -89,6 +112,7 @@ fun CompanyInfoScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
+                    // Stock Chart
                     if (state.stockInfos.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -108,6 +132,7 @@ fun CompanyInfoScreen(
                         )
                     }
 
+                    // GPT Analysis
                     state.gptmesg?.let { gptMessage ->
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -129,13 +154,17 @@ fun CompanyInfoScreen(
             }
         }
 
+        // Loading State
         if (state.isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Center))
-        } else if (state.error != null) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+
+        // Error State
+        state.error?.let { error ->
             Text(
-                text = state.error,
+                text = error,
                 color = MaterialTheme.colors.error,
-                modifier = Modifier.align(Center)
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }

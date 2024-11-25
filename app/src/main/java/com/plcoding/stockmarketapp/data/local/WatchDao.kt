@@ -27,6 +27,8 @@ interface WatchDao {
     @Query("DELETE FROM watchlist")
     suspend fun clearWatchlist()
 
+
+
     @Query("""
     SELECT * FROM watchlist
     INNER JOIN companylistingentity

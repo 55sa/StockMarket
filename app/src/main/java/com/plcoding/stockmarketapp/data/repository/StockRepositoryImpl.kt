@@ -6,6 +6,7 @@ import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.csv.CSVParser
 import com.plcoding.stockmarketapp.data.csv.CompanyListingsParser
 import com.plcoding.stockmarketapp.data.local.StockDatabase
+import com.plcoding.stockmarketapp.data.local.WatchlistEntity
 import com.plcoding.stockmarketapp.data.mapper.toCompanyInfo
 import com.plcoding.stockmarketapp.data.mapper.toCompanyListing
 import com.plcoding.stockmarketapp.data.mapper.toCompanyListingEntity
@@ -159,7 +160,7 @@ class StockRepositoryImpl @Inject constructor(
                 "Timestamp: ${it.date}, Close: ${it.close}"
             }
             val prompt = """
-            You are a financial analyst. Analyze the following intraday trading data and provide insights, such as patterns, anomalies, or trends:
+            You are a financial analyst. Analyze the following intraday trading data and provide insights, such as patterns, anomalies, or trends in few sentences:
             
             $tradesSummary
         """.trimIndent()
@@ -184,6 +185,13 @@ class StockRepositoryImpl @Inject constructor(
             Resource.Error("Failed to analyze with GPT: ${e.message}")
         }
     }
+
+    override suspend fun addToWatchList(symbol: String) {
+        watchDao.insertwatch(
+            WatchlistEntity(symbol = symbol)
+        )
+    }
+
 
     private fun extractContentFromJson(jsonResponse: String): String {
         return try {

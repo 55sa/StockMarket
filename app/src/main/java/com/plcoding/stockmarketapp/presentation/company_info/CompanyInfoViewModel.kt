@@ -62,4 +62,9 @@ class CompanyInfoViewModel @Inject constructor(
             }
         }
     }
+    fun addToWatchList(symbol: String) {
+        viewModelScope.launch {
+            repository.addToWatchList(symbol)
+        }
+    }
 }

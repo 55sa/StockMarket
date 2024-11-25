@@ -7,7 +7,7 @@ import retrofit2.http.POST
 
 interface GptApi {
 
-    @POST("chat/completions") // Ensure it matches OpenAI API
+    @POST("chat/completions")
     suspend fun analyzeIntradayInfo(
         @Body request: GptRequest
     ): ResponseBody
