@@ -24,6 +24,9 @@ class HomeViewModel @Inject constructor(
     val watchlist: StateFlow<Resource<List<CompanyListing>>> = _watchlist
 
     init {
+        viewModelScope.launch {
+            initializeData()
+        }
         loadNasdaqData()
         loadWatchlist()
     }
@@ -39,5 +42,24 @@ class HomeViewModel @Inject constructor(
             _watchlist.value = repository.getWatchlistWithDetails()
         }
     }
+
+    private suspend fun initializeData() {
+
+        val isDatabaseInitialized = repository.isDatabaseInitialized()
+        if (!isDatabaseInitialized) {
+            initializeDatabase()
+        }
+
+
+        loadWatchlist()
+    }
+
+    private suspend fun initializeDatabase() {
+
+        val result = repository.initializeDatabaseFromRemote()
+
+    }
+
+
 }
 
