@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
-import androidx.compose.material3.CircularProgressIndicator
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
@@ -24,7 +24,7 @@ import com.plcoding.stockmarketapp.util.Resource
 import androidx.compose.ui.graphics.Path
 import com.ramcosta.composedestinations.annotation.Destination
 
-
+@Destination
 @Composable
 fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
     var searchQuery by remember { mutableStateOf("") }
@@ -226,7 +226,7 @@ fun BottomNavigationBar(modifier: Modifier) {
     }
 }
 
-@Destination(start = true)
+@Destination
 @Composable
 fun HomeScreen() {
     HomePageScreen()
