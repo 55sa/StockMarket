@@ -16,12 +16,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyInfoScreenDestination
+import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
-@Destination
+@Destination(start = true)
 fun CompanyListingsScreen(
     navigator: DestinationsNavigator,
     viewModel: CompanyListingsViewModel = hiltViewModel()
@@ -30,6 +32,7 @@ fun CompanyListingsScreen(
         isRefreshing = viewModel.state.isRefreshing
     )
     val state = viewModel.state
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -52,7 +55,7 @@ fun CompanyListingsScreen(
         SwipeRefresh(
             state = swipeRefreshState,
             onRefresh = {
-                viewModel.onEvent(CompanyListingsEvent.Refresh)
+//                viewModel.onEvent(CompanyListingsEvent.Refresh)
             }
         ) {
             LazyColumn(
@@ -67,7 +70,9 @@ fun CompanyListingsScreen(
                             .clickable {
                                 navigator.navigate(
                                     CompanyInfoScreenDestination(company.symbol)
-                                )
+                                ){
+                                    popUpTo(CompanyListingsScreenDestination.route) { inclusive = false }
+                                }
                             }
                             .padding(16.dp)
                     )

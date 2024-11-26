@@ -1,5 +1,6 @@
 package com.plcoding.stockmarketapp.presentation.company_listings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -11,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 
 @Composable
@@ -25,9 +27,20 @@ fun CompanyItem(
         Column(
             modifier = Modifier.weight(1f)
         ) {
+            val companyName = company.name.substringBefore(" ").lowercase()
+            val logoUrl = "https://logo.clearbit.com/${companyName}.com"
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Image(
+                    painter = rememberAsyncImagePainter(model = logoUrl),
+                    contentDescription = "${company.name} logo",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(end = 8.dp)
+                )
+
+
                 Text(
                     text = company.name,
                     fontWeight = FontWeight.SemiBold,
@@ -53,3 +66,5 @@ fun CompanyItem(
         }
     }
 }
+
+
