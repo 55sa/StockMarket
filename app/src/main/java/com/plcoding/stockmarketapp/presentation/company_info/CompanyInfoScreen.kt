@@ -19,14 +19,18 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
+import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
 import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Destination
 fun CompanyInfoScreen(
     symbol: String,
+    navigator: DestinationsNavigator,
     viewModel: CompanyInfoViewModel = hiltViewModel()
+
 
 ) {
     val state = viewModel.state
@@ -44,20 +48,32 @@ fun CompanyInfoScreen(
                     .padding(16.dp)
             ) {
 
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(6.dp),
-                    contentAlignment = Alignment.TopEnd
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(onClick = {
+                        navigator.popBackStack(CompanyListingsScreenDestination.route, inclusive = false)
+                    }) {
+                        Icon(
+                            painter = painterResource(android.R.drawable.ic_menu_revert), // System back icon
+                            contentDescription = "Back",
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colors.onBackground
+                        )
+                    }
+
                     IconButton(onClick = {
                         viewModel.addToWatchList(symbol)
                     }) {
                         Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_add), // Use system icon
+                            painter = painterResource(android.R.drawable.ic_menu_add), // Add icon
                             contentDescription = "Add to Watchlist",
-                            modifier = Modifier.size(24.dp), // Adjust size for better UI fit
-                            tint = MaterialTheme.colors.onBackground // Optional tint color
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colors.onBackground
                         )
                     }
                 }

@@ -18,6 +18,7 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyInfoScreenDestination
+import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -69,7 +70,9 @@ fun CompanyListingsScreen(
                             .clickable {
                                 navigator.navigate(
                                     CompanyInfoScreenDestination(company.symbol)
-                                )
+                                ){
+                                    popUpTo(CompanyListingsScreenDestination.route) { inclusive = false }
+                                }
                             }
                             .padding(16.dp)
                     )
