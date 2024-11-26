@@ -55,7 +55,7 @@ fun CompanyListingsScreen(
         SwipeRefresh(
             state = swipeRefreshState,
             onRefresh = {
-                viewModel.onEvent(CompanyListingsEvent.Refresh)
+//                viewModel.onEvent(CompanyListingsEvent.Refresh)
             }
         ) {
             LazyColumn(
