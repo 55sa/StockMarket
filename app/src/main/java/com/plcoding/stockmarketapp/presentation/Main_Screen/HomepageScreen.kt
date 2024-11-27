@@ -17,8 +17,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import com.plcoding.stockmarketapp.presentation.Login.LoginAndSignUpScreen
+
 import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
-import com.plcoding.stockmarketapp.presentation.Login.loginAndSignUp
 import com.plcoding.stockmarketapp.presentation.company_info.StockChart
 import com.plcoding.stockmarketapp.presentation.company_listings.CompanyItem
 import com.plcoding.stockmarketapp.util.Resource
@@ -142,7 +143,7 @@ fun HomePageScreen(viewModel: HomeViewModel = hiltViewModel()) {
         }
 
         "Login" -> {
-            loginAndSignUp().LoginAndSignUpScreen(
+            LoginAndSignUpScreen(
                 onBack = { currentScreen = "Home" }
             )
         }
