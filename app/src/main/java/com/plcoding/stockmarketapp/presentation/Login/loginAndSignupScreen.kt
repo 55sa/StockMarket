@@ -1,5 +1,7 @@
+
 package com.plcoding.stockmarketapp.presentation.Login
 
+import android.provider.Settings.Global.putString
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -8,20 +10,40 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import android.content.Context
+import android.content.SharedPreferences
+
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 
 @Destination
 @Composable
 fun LoginAndSignUpScreen(
     navigator: DestinationsNavigator
 ) {
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isSigningUp by remember { mutableStateOf(false) }
     val isLoggedIn = remember { mutableStateOf(false) }
+    val passwordMinLength = 6
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        username = ""
+        password = ""
+    }
 
     Column(
         modifier = Modifier
@@ -30,7 +52,7 @@ fun LoginAndSignUpScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Back button at the top
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -72,12 +94,58 @@ fun LoginAndSignUpScreen(
 
             Button(
                 onClick = {
-                    // Add authentication logic here
-                    isLoggedIn.value = true
+                    if (isSigningUp) {
+                        if (password.length >= passwordMinLength) {
+                            // Save credentials to SharedPreferences
+                            val editor = sharedPreferences.edit()
+                            editor.putString("username", username)
+                            editor.putString("password", password)
+                            editor.apply()
+
+                            isSigningUp = false
+                            username = ""
+                            password = ""
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Signup successful. Please log in.")
+                            }
+                        } else {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Password must be at least $passwordMinLength characters.")
+                            }
+                        }
+                    } else {
+                        val savedUsername = sharedPreferences.getString("username", "")
+                        val savedPassword = sharedPreferences.getString("password", "")
+                        if (username == savedUsername && password == savedPassword) {
+                            isLoggedIn.value = true
+                            username = ""
+                            password = ""
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Login successful.")
+                            }
+                        } else {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Invalid credentials. Please try again.")
+                            }
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isSigningUp) "Sign Up" else "Login")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Google sign-in clicked. Implement the logic.")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sign In with Google")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -91,7 +159,7 @@ fun LoginAndSignUpScreen(
             }
         } else {
             Text(
-                text = "Welcome, $username!",
+                text = "Welcome, ${sharedPreferences.getString("username", "User")!!}!",
                 style = MaterialTheme.typography.h5,
                 fontWeight = FontWeight.Bold
             )
@@ -101,8 +169,6 @@ fun LoginAndSignUpScreen(
             Button(
                 onClick = {
                     isLoggedIn.value = false
-                    username = ""
-                    password = ""
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -110,4 +176,15 @@ fun LoginAndSignUpScreen(
             }
         }
     }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        SnackbarHost(hostState = snackbarHostState)
+    }
 }
+
+
+
+
