@@ -56,7 +56,7 @@ fun CompanyInfoScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = {
-                        navigator.popBackStack(CompanyListingsScreenDestination.route, inclusive = false)
+                        navigator.popBackStack()
                     }) {
                         Icon(
                             painter = painterResource(android.R.drawable.ic_menu_revert), // System back icon
