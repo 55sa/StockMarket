@@ -3,15 +3,32 @@ package com.plcoding.stockmarketapp.presentation.company_info
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -29,69 +46,150 @@ fun StockChart(
     val upperBound = (infos.maxOfOrNull { it.close }?.roundToInt() ?: 0) + 1
     val lowerBound = (infos.minOfOrNull { it.close }?.roundToInt() ?: 0) - 1
 
-    Canvas(modifier = modifier) {
-        val spacing = 20.dp.toPx()
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-        val pointSpacing = (canvasWidth - spacing) / infos.size
+    // Tooltip state
+    var selectedInfo by remember { mutableStateOf<IntradayInfo?>(null) }
 
-        // Draw horizontal grid lines and labels
-        val textPaint = android.graphics.Paint().apply {
-            color = android.graphics.Color.WHITE
-            textSize = 12.sp.toPx()
-        }
-        val priceSteps = (upperBound - lowerBound) / 5
-        for (i in 0..4) {
-            val y = canvasHeight - (canvasHeight / 4f) * i
-            drawLine(
-                color = Color.Gray,
-                start = Offset(spacing, y),
-                end = Offset(canvasWidth, y),
-                strokeWidth = 1.dp.toPx()
-            )
-            drawContext.canvas.nativeCanvas.drawText(
-                (lowerBound + priceSteps * i).toString(),
-                0f,
-                y,
-                textPaint
-            )
-        }
+    // Date formatter
+    val dateFormatter = DateTimeFormatter.ofPattern("MM-dd")
 
-        // Create the graph path
-        val graphPath = Path().apply {
-            infos.forEachIndexed { index, info ->
-                val x = spacing + index * pointSpacing
-                val y = canvasHeight - ((info.close - lowerBound) / (upperBound - lowerBound) * (canvasHeight - spacing)).toFloat()
-                if (index == 0) {
-                    moveTo(x, y)
-                } else {
-                    lineTo(x, y)
+    val density = LocalDensity.current
+
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Canvas(modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    with(density) {
+                        val spacing = 20.dp.toPx()
+                        val canvasWidth = size.width
+                        val pointSpacing = (canvasWidth - spacing) / (infos.size - 1)
+
+                        // Find the nearest point
+                        val tappedIndex = ((offset.x - spacing) / pointSpacing).roundToInt()
+                            .coerceIn(0, infos.size - 1)
+
+                        // Determine if tap is close enough to a valid point
+                        val tappedPointX = spacing + tappedIndex * pointSpacing
+                        val tappedPointY = size.height - ((infos[tappedIndex].close - lowerBound) / (upperBound - lowerBound) * size.height)
+                        val touchThreshold = 20.dp.toPx()
+
+                        if (offset.x in (tappedPointX - touchThreshold)..(tappedPointX + touchThreshold) &&
+                            offset.y in (tappedPointY - touchThreshold)..(tappedPointY + touchThreshold)) {
+                            selectedInfo = infos.getOrNull(tappedIndex)
+                        } else {
+                            selectedInfo = null // Clear selection if tap is not near any point
+                        }
+                    }
+                }
+            }
+        ) {
+            with(density) {
+                val spacing = 20.dp.toPx()
+                val canvasWidth = size.width
+                val canvasHeight = size.height
+                val pointSpacing = (canvasWidth - spacing) / (infos.size - 1)
+
+                // Draw horizontal grid lines and labels
+                val priceSteps = (upperBound - lowerBound) / 5
+                for (i in 0..4) {
+                    val y = canvasHeight - (canvasHeight / 4f) * i
+                    drawLine(
+                        color = Color.Gray,
+                        start = Offset(spacing, y),
+                        end = Offset(canvasWidth, y),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                    // Left-side vertical ruler labels
+                    drawContext.canvas.nativeCanvas.drawText(
+                        "${(lowerBound + priceSteps * i)}",
+                        spacing / 2,
+                        y,
+                        android.graphics.Paint().apply {
+                            color = android.graphics.Color.WHITE
+                            textSize = 12.sp.toPx()
+                            textAlign = android.graphics.Paint.Align.RIGHT
+                        }
+                    )
+                }
+
+                // Draw vertical grid lines and labels
+                infos.forEachIndexed { index, info ->
+                    val x = spacing + index * pointSpacing
+                    if (index % 5 == 0 || index == infos.size - 1) {
+                        val formattedDate = info.date.format(dateFormatter)
+
+                        drawLine(
+                            color = Color.Gray,
+                            start = Offset(x, 0f),
+                            end = Offset(x, canvasHeight),
+                            strokeWidth = 0.5.dp.toPx()
+                        )
+
+                        // Bottom horizontal ruler labels
+                        drawContext.canvas.nativeCanvas.drawText(
+                            formattedDate,
+                            x,
+                            canvasHeight + 15.dp.toPx(),
+                            android.graphics.Paint().apply {
+                                color = android.graphics.Color.WHITE
+                                textSize = 12.sp.toPx()
+                                textAlign = android.graphics.Paint.Align.CENTER
+                            }
+                        )
+                    }
+                }
+
+                // Create graph path
+                val graphPath = Path().apply {
+                    infos.forEachIndexed { index, info ->
+                        val x = spacing + index * pointSpacing
+                        val y = canvasHeight - ((info.close - lowerBound) / (upperBound - lowerBound) * canvasHeight)
+                        if (index == 0) moveTo(x, y.toFloat()) else lineTo(x, y.toFloat())
+                    }
+                }
+
+                // Draw graph path
+                drawPath(
+                    path = graphPath,
+                    color = graphColor,
+                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                )
+
+                // Draw points
+                infos.forEachIndexed { index, info ->
+                    val x = spacing + index * pointSpacing
+                    val y = canvasHeight - ((info.close - lowerBound) / (upperBound - lowerBound) * canvasHeight)
+                    drawCircle(
+                        color = graphColor,
+                        center = Offset(x, y.toFloat()),
+                        radius = 4.dp.toPx()
+                    )
                 }
             }
         }
 
-        // Create the fill path
-        val fillPath = Path().apply {
-            addPath(graphPath)
-            lineTo(canvasWidth, canvasHeight)
-            lineTo(spacing, canvasHeight)
-            close()
+        // Fixed Tooltip at the bottom center
+        selectedInfo?.let { info ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(color = Color.Black.copy(alpha = 0.8f), shape = RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = "Date: ${info.date.format(dateFormatter)}\nPrice: ${String.format("%.2f", info.close)}",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
-
-        // Draw the fill area
-        drawPath(
-            path = fillPath,
-            brush = Brush.verticalGradient(
-                colors = listOf(graphColor.copy(alpha = 0.4f), Color.Transparent),
-                endY = canvasHeight
-            )
-        )
-
-        // Draw the graph line
-        drawPath(
-            path = graphPath,
-            color = graphColor,
-            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
-        )
     }
 }
+
+
+
