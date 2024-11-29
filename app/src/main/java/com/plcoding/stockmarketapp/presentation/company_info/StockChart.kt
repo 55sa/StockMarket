@@ -8,9 +8,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,44 +48,44 @@ fun StockChart(
     val upperBound = (infos.maxOfOrNull { it.close }?.roundToInt() ?: 0) + 1
     val lowerBound = (infos.minOfOrNull { it.close }?.roundToInt() ?: 0) - 1
 
-    // Tooltip state
     var selectedInfo by remember { mutableStateOf<IntradayInfo?>(null) }
-
-    // Date formatter
-    val dateFormatter = DateTimeFormatter.ofPattern("MM-dd")
-
+    val dateFormatter = DateTimeFormatter.ofPattern("MM-dd HH:mm")
     val density = LocalDensity.current
+    val textColor = MaterialTheme.colors.onBackground
 
     Box(
-        modifier = modifier.fillMaxSize()
-    ) {
-        Canvas(modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    with(density) {
-                        val spacing = 20.dp.toPx()
-                        val canvasWidth = size.width
-                        val pointSpacing = (canvasWidth - spacing) / (infos.size - 1)
+            .padding(16.dp) // Prevent content from touching screen edges
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .height(300.dp) // Fixed height for the chart area
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        with(density) {
+                            val spacing = 20.dp.toPx()
+                            val canvasWidth = size.width
+                            val pointSpacing = (canvasWidth - spacing) / (infos.size - 1)
 
-                        // Find the nearest point
-                        val tappedIndex = ((offset.x - spacing) / pointSpacing).roundToInt()
-                            .coerceIn(0, infos.size - 1)
+                            val tappedIndex = ((offset.x - spacing) / pointSpacing).roundToInt()
+                                .coerceIn(0, infos.size - 1)
 
-                        // Determine if tap is close enough to a valid point
-                        val tappedPointX = spacing + tappedIndex * pointSpacing
-                        val tappedPointY = size.height - ((infos[tappedIndex].close - lowerBound) / (upperBound - lowerBound) * size.height)
-                        val touchThreshold = 20.dp.toPx()
+                            val tappedPointX = spacing + tappedIndex * pointSpacing
+                            val tappedPointY = size.height - ((infos[tappedIndex].close - lowerBound) / (upperBound - lowerBound) * size.height)
+                            val touchThreshold = 20.dp.toPx()
 
-                        if (offset.x in (tappedPointX - touchThreshold)..(tappedPointX + touchThreshold) &&
-                            offset.y in (tappedPointY - touchThreshold)..(tappedPointY + touchThreshold)) {
-                            selectedInfo = infos.getOrNull(tappedIndex)
-                        } else {
-                            selectedInfo = null // Clear selection if tap is not near any point
+                            if (offset.x in (tappedPointX - touchThreshold)..(tappedPointX + touchThreshold) &&
+                                offset.y in (tappedPointY - touchThreshold)..(tappedPointY + touchThreshold)) {
+                                selectedInfo = infos.getOrNull(tappedIndex)
+                            } else {
+                                selectedInfo = null
+                            }
                         }
                     }
                 }
-            }
         ) {
             with(density) {
                 val spacing = 20.dp.toPx()
@@ -101,13 +103,12 @@ fun StockChart(
                         end = Offset(canvasWidth, y),
                         strokeWidth = 1.dp.toPx()
                     )
-                    // Left-side vertical ruler labels
                     drawContext.canvas.nativeCanvas.drawText(
                         "${(lowerBound + priceSteps * i)}",
                         spacing / 2,
                         y,
                         android.graphics.Paint().apply {
-                            color = android.graphics.Color.WHITE
+                            color = textColor.toArgb()
                             textSize = 12.sp.toPx()
                             textAlign = android.graphics.Paint.Align.RIGHT
                         }
@@ -119,21 +120,18 @@ fun StockChart(
                     val x = spacing + index * pointSpacing
                     if (index % 5 == 0 || index == infos.size - 1) {
                         val formattedDate = info.date.format(dateFormatter)
-
                         drawLine(
                             color = Color.Gray,
                             start = Offset(x, 0f),
                             end = Offset(x, canvasHeight),
                             strokeWidth = 0.5.dp.toPx()
                         )
-
-                        // Bottom horizontal ruler labels
                         drawContext.canvas.nativeCanvas.drawText(
                             formattedDate,
                             x,
                             canvasHeight + 15.dp.toPx(),
                             android.graphics.Paint().apply {
-                                color = android.graphics.Color.WHITE
+                                color = textColor.toArgb()
                                 textSize = 12.sp.toPx()
                                 textAlign = android.graphics.Paint.Align.CENTER
                             }
@@ -170,26 +168,23 @@ fun StockChart(
             }
         }
 
-        // Fixed Tooltip at the bottom center
+        // Tooltip at the bottom
         selectedInfo?.let { info ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .align(Alignment.BottomCenter)
-                    .background(color = Color.Black.copy(alpha = 0.8f), shape = RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
                     .padding(8.dp)
             ) {
                 Text(
                     text = "Date: ${info.date.format(dateFormatter)}\nPrice: ${String.format("%.2f", info.close)}",
                     color = Color.White,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     textAlign = TextAlign.Center
                 )
             }
         }
     }
 }
-
-
-

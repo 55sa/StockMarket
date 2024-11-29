@@ -30,8 +30,6 @@ fun CompanyInfoScreen(
     symbol: String,
     navigator: DestinationsNavigator,
     viewModel: CompanyInfoViewModel = hiltViewModel()
-
-
 ) {
     val state = viewModel.state
 
@@ -48,122 +46,203 @@ fun CompanyInfoScreen(
                     .padding(16.dp)
             ) {
 
+                // Top Row with Back and Add to Watchlist Buttons
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(6.dp),
+                        .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = {
-                        navigator.popBackStack()
-                    }) {
+                    IconButton(onClick = { navigator.popBackStack() }) {
                         Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_revert), // System back icon
+                            painter = painterResource(android.R.drawable.ic_menu_revert),
                             contentDescription = "Back",
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colors.onBackground
+                            tint = MaterialTheme.colors.primary
                         )
                     }
 
-                    IconButton(onClick = {
-                        viewModel.addToWatchList(symbol)
-                    }) {
+                    IconButton(onClick = { viewModel.addToWatchList(symbol) }) {
                         Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_add), // Add icon
+                            painter = painterResource(android.R.drawable.ic_menu_add),
                             contentDescription = "Add to Watchlist",
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colors.onBackground
+                            tint = MaterialTheme.colors.primary
                         )
                     }
                 }
 
-
-
-
-
+                // Company Details
                 state.company?.let { company ->
-                    // Company Details
-                    Text(
-                        text = company.name,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colors.onBackground,
+                    Card(
+                        elevation = 4.dp,
+                        shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = company.symbol,
-                        fontStyle = FontStyle.Italic,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colors.onBackground,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Divider(modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Industry: ${company.industry}",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colors.onBackground,
-                        modifier = Modifier.fillMaxWidth(),
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Country: ${company.country}",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colors.onBackground,
-                        modifier = Modifier.fillMaxWidth(),
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Divider(modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = company.description,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colors.onBackground,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // Stock Chart
-                    if (state.stockInfos.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Market Summary",
-                            color = MaterialTheme.colors.onBackground,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
-                        StockChart(
-                            infos = state.stockInfos,
+                    ) {
+                        Column(
                             modifier = Modifier
+                                .padding(16.dp)
                                 .fillMaxWidth()
-                                .height(250.dp)
-                                .align(Alignment.CenterHorizontally)
-                        )
+                        ) {
+                            Text(
+                                text = company.name,
+                                style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colors.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = company.symbol,
+                                style = MaterialTheme.typography.subtitle1.copy(fontStyle = FontStyle.Italic),
+                                color = MaterialTheme.colors.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Divider()
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Industry: ${company.industry}",
+                                style = MaterialTheme.typography.body1,
+                                color = MaterialTheme.colors.onSurface
+                            )
+                            Text(
+                                text = "Country: ${company.country}",
+                                style = MaterialTheme.typography.body1,
+                                color = MaterialTheme.colors.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Divider()
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = company.description,
+                                style = MaterialTheme.typography.body2,
+                                color = MaterialTheme.colors.onSurface,
+                                lineHeight = 20.sp
+                            )
+                        }
                     }
+                }
 
-                    // GPT Analysis
-                    state.gptmesg?.let { gptMessage ->
+                // Stock Chart
+                if (state.stockInfos.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Market Summary",
+                        style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colors.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    StockChart(
+                        infos = state.stockInfos,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp)
+                            .padding(horizontal = 8.dp)
+                    )
+
+                    // Latest Data Section
+                    state.stockInfos.maxByOrNull { it.date }?.let { recentInfo ->
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "GPT Analysis",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colors.onBackground,
-                            modifier = Modifier.fillMaxWidth()
+                            text = "Latest Data",
+                            style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colors.primary
                         )
                         Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            elevation = 4.dp,
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Close:",
+                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                    Text(
+                                        text = String.format("%.2f", recentInfo.close),
+                                        style = MaterialTheme.typography.body1,
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Low:",
+                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                    Text(
+                                        text = String.format("%.2f", recentInfo.low),
+                                        style = MaterialTheme.typography.body1,
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "High:",
+                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                    Text(
+                                        text = String.format("%.2f", recentInfo.high),
+                                        style = MaterialTheme.typography.body1,
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Volume:",
+                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                    Text(
+                                        text = String.format("%.2f", recentInfo.volume),
+                                        style = MaterialTheme.typography.body1,
+                                        color = MaterialTheme.colors.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // GPT Analysis
+                state.gptmesg?.let { gptMessage ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "GPT Analysis",
+                        style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colors.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        elevation = 4.dp,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(
                             text = gptMessage,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colors.onBackground,
-                            modifier = Modifier.fillMaxWidth()
+                            style = MaterialTheme.typography.body2,
+                            color = MaterialTheme.colors.onSurface,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                 }

@@ -19,9 +19,9 @@ interface WatchDao {
     @Query("SELECT * FROM watchlist")
     suspend fun getAllSymbols(): List<WatchlistEntity>
 
-    // Delete a symbol by its ID
-    @Query("DELETE FROM watchlist WHERE id = :id")
-    suspend fun deleteSymbolById(id: Int)
+    // Delete a symbol by its Symbol
+    @Query("DELETE FROM watchlist WHERE symbol = :symbol")
+    suspend fun deleteBySymbol(symbol: String)
 
     // Clear the entire watchlist
     @Query("DELETE FROM watchlist")

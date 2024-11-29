@@ -43,22 +43,22 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun initializeData() {
+    fun removeFromWatchlist(symbol: String) {
+        viewModelScope.launch {
+            repository.deleteFromWatchList(symbol)
+            loadWatchlist() // 删除后刷新列表
+        }
+    }
 
+    private suspend fun initializeData() {
         val isDatabaseInitialized = repository.isDatabaseInitialized()
         if (!isDatabaseInitialized) {
             initializeDatabase()
         }
-
-
         loadWatchlist()
     }
 
     private suspend fun initializeDatabase() {
-
-        val result = repository.initializeDatabaseFromRemote()
-
+        repository.initializeDatabaseFromRemote()
     }
-
-
 }

@@ -40,7 +40,6 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 @Destination(start = true)
 @Composable
 fun HomePageScreen(
-
     navigator: DestinationsNavigator,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -49,10 +48,16 @@ fun HomePageScreen(
     val watchlist by viewModel.watchlist.collectAsState()
     val intradayData by viewModel.nasdaqData.collectAsState()
 
+    // 每次进入页面刷新数据
+    LaunchedEffect(Unit) {
+        viewModel.loadWatchlist()
+        viewModel.loadNasdaqData()
+    }
+
     Scaffold(
         bottomBar = {
             BottomNavigationBar(
-                onProfileClick = { navigator.navigate(LoginAndSignUpScreenDestination)}
+                onProfileClick = { navigator.navigate(LoginAndSignUpScreenDestination) }
             )
         }
     ) { innerPadding ->
@@ -89,10 +94,9 @@ fun HomePageScreen(
                         .size(24.dp)
                         .weight(1f)
                         .clickable {
-                            // Navigate to CompanyListingsScreen
                             navigator.navigate(CompanyListingsScreenDestination)
                         },
-                    tint = Color.Black
+                    tint = MaterialTheme.colors.primary
                 )
             }
 
@@ -185,8 +189,8 @@ fun BottomNavigationBar(
     modifier: Modifier = Modifier
 ) {
     BottomNavigation(
-        backgroundColor = Color.White,
-        contentColor = Color.Green,
+        backgroundColor = MaterialTheme.colors.background, // 根据系统颜色模式动态变化
+        contentColor = MaterialTheme.colors.primary, // 根据系统颜色变化
         modifier = modifier
     ) {
         BottomNavigationItem(

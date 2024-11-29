@@ -31,4 +31,6 @@ interface StockRepository {
     suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String>
 
     suspend fun addToWatchList(symbol: String): Unit
+
+    suspend fun deleteFromWatchList(symbol: String)
 }
