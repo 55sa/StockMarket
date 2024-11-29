@@ -32,5 +32,7 @@ interface StockRepository {
 
     suspend fun addToWatchList(symbol: String): Unit
 
-    suspend fun deleteFromWatchList(symbol: String)
+    suspend fun deleteFromWatchList(symbol: String): Unit
+
+    suspend fun isSymbolInWatchlist(symbol: String): Boolean
 }

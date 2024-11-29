@@ -62,9 +62,18 @@ class CompanyInfoViewModel @Inject constructor(
             }
         }
     }
+
+    fun checkIfInWatchlist(symbol: String) {
+        viewModelScope.launch {
+            val isInWatchlist = repository.isSymbolInWatchlist(symbol)
+            state = state.copy(isInWatchList = isInWatchlist)
+        }
+    }
+
     fun addToWatchList(symbol: String) {
         viewModelScope.launch {
             repository.addToWatchList(symbol)
+            state = state.copy(isInWatchList = true)
         }
     }
 }

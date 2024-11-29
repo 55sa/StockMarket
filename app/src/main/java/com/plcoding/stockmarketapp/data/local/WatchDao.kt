@@ -37,4 +37,9 @@ interface WatchDao {
     suspend fun getWatchlistWithDetails(): List<CompanyListingEntity>
 
 
+    // Check if a symbol exists in the watchlist
+    @Query("SELECT COUNT(*) > 0 FROM watchlist WHERE symbol = :symbol")
+    suspend fun isSymbolInWatchlist(symbol: String): Boolean
+
+
 }

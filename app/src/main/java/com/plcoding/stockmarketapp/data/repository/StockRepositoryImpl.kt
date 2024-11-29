@@ -196,6 +196,10 @@ class StockRepositoryImpl @Inject constructor(
         watchDao.deleteBySymbol(symbol)
     }
 
+    override suspend fun isSymbolInWatchlist(symbol: String): Boolean {
+        return watchDao.isSymbolInWatchlist(symbol)
+    }
+
 
     private fun extractContentFromJson(jsonResponse: String): String {
         return try {

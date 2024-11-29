@@ -8,9 +8,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,6 +34,10 @@ fun CompanyInfoScreen(
     viewModel: CompanyInfoViewModel = hiltViewModel()
 ) {
     val state = viewModel.state
+
+    LaunchedEffect(Unit) {
+        viewModel.checkIfInWatchlist(symbol)
+    }
 
     Box(
         modifier = Modifier
@@ -62,12 +68,14 @@ fun CompanyInfoScreen(
                         )
                     }
 
-                    IconButton(onClick = { viewModel.addToWatchList(symbol) }) {
-                        Icon(
-                            painter = painterResource(android.R.drawable.ic_menu_add),
-                            contentDescription = "Add to Watchlist",
-                            tint = MaterialTheme.colors.primary
-                        )
+                    if (!state.isInWatchList) {
+                        IconButton(onClick = { viewModel.addToWatchList(symbol) }) {
+                            Icon(
+                                painter = painterResource(android.R.drawable.ic_menu_add),
+                                contentDescription = "Add to Watchlist",
+                                tint = MaterialTheme.colors.primary
+                            )
+                        }
                     }
                 }
 
@@ -85,13 +93,20 @@ fun CompanyInfoScreen(
                         ) {
                             Text(
                                 text = company.name,
-                                style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.Bold),
+                                style = MaterialTheme.typography.h5.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Serif,
+                                    letterSpacing = 1.2.sp
+                                ),
                                 color = MaterialTheme.colors.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = company.symbol,
-                                style = MaterialTheme.typography.subtitle1.copy(fontStyle = FontStyle.Italic),
+                                style = MaterialTheme.typography.subtitle1.copy(
+                                    fontStyle = FontStyle.Italic,
+                                    fontFamily = FontFamily.Monospace
+                                ),
                                 color = MaterialTheme.colors.onSurface
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -99,12 +114,18 @@ fun CompanyInfoScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Industry: ${company.industry}",
-                                style = MaterialTheme.typography.body1,
+                                style = MaterialTheme.typography.body1.copy(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Medium
+                                ),
                                 color = MaterialTheme.colors.onSurface
                             )
                             Text(
                                 text = "Country: ${company.country}",
-                                style = MaterialTheme.typography.body1,
+                                style = MaterialTheme.typography.body1.copy(
+                                    fontFamily = FontFamily.SansSerif,
+                                    fontWeight = FontWeight.Medium
+                                ),
                                 color = MaterialTheme.colors.onSurface
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -112,9 +133,11 @@ fun CompanyInfoScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = company.description,
-                                style = MaterialTheme.typography.body2,
-                                color = MaterialTheme.colors.onSurface,
-                                lineHeight = 20.sp
+                                style = MaterialTheme.typography.body2.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    lineHeight = 20.sp
+                                ),
+                                color = MaterialTheme.colors.onSurface
                             )
                         }
                     }
@@ -125,7 +148,10 @@ fun CompanyInfoScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Market Summary",
-                        style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.h6.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Cursive
+                        ),
                         color = MaterialTheme.colors.primary
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -136,92 +162,6 @@ fun CompanyInfoScreen(
                             .height(250.dp)
                             .padding(horizontal = 8.dp)
                     )
-
-                    // Latest Data Section
-                    state.stockInfos.maxByOrNull { it.date }?.let { recentInfo ->
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Latest Data",
-                            style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colors.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            elevation = 4.dp,
-                            shape = MaterialTheme.shapes.medium,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Close:",
-                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                    Text(
-                                        text = String.format("%.2f", recentInfo.close),
-                                        style = MaterialTheme.typography.body1,
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Low:",
-                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                    Text(
-                                        text = String.format("%.2f", recentInfo.low),
-                                        style = MaterialTheme.typography.body1,
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "High:",
-                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                    Text(
-                                        text = String.format("%.2f", recentInfo.high),
-                                        style = MaterialTheme.typography.body1,
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Volume:",
-                                        style = MaterialTheme.typography.body1.copy(fontWeight = FontWeight.Medium),
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                    Text(
-                                        text = String.format("%.2f", recentInfo.volume),
-                                        style = MaterialTheme.typography.body1,
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
 
                 // GPT Analysis
@@ -229,7 +169,10 @@ fun CompanyInfoScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "GPT Analysis",
-                        style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.h6.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif
+                        ),
                         color = MaterialTheme.colors.primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -240,7 +183,10 @@ fun CompanyInfoScreen(
                     ) {
                         Text(
                             text = gptMessage,
-                            style = MaterialTheme.typography.body2,
+                            style = MaterialTheme.typography.body2.copy(
+                                fontFamily = FontFamily.Cursive,
+                                letterSpacing = 0.5.sp
+                            ),
                             color = MaterialTheme.colors.onSurface,
                             modifier = Modifier.padding(16.dp)
                         )
@@ -259,6 +205,10 @@ fun CompanyInfoScreen(
             Text(
                 text = error,
                 color = MaterialTheme.colors.error,
+                style = MaterialTheme.typography.body1.copy(
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                ),
                 modifier = Modifier.align(Alignment.Center)
             )
         }
