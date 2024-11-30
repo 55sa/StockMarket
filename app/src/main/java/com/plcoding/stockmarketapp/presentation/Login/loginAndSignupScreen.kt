@@ -53,7 +53,7 @@ fun LoginAndSignUpScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navigator.popBackStack() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colors.primary)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
