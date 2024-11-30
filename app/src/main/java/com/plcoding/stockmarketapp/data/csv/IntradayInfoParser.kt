@@ -39,7 +39,7 @@ class IntradayInfoParser @Inject constructor() : CSVParser<IntradayInfo> {
                 }
                 .filter {
                     // Filter by the day you need (e.g., 4 days ago)
-                    it.date.toLocalDate() == LocalDate.now().minusDays(4)
+                    it.date.toLocalDate() == LocalDate.now().minusDays(0)
                 }
                 .sortedBy {
                     it.date.hour // Sort by hour
