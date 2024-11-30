@@ -1,7 +1,10 @@
 package com.plcoding.stockmarketapp.di
 
 import android.app.Application
+import android.content.Context
 import androidx.room.Room
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.SignInClient
 import com.plcoding.stockmarketapp.BuildConfig
 import com.plcoding.stockmarketapp.data.csv.CSVParser
 import com.plcoding.stockmarketapp.data.local.StockDatabase
@@ -12,9 +15,11 @@ import com.plcoding.stockmarketapp.data.repository.StockRepositoryImpl
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
+import com.plcoding.stockmarketapp.presentation.Login.GoogleAuthUiClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -89,4 +94,27 @@ object AppModule {
         ): StockRepository {
             return StockRepositoryImpl(api, gptApi, db, companyListingsParser, intradayInfoParser)
         }
-    }}
+    }
+
+    @Provides
+    @Singleton
+    fun provideSignInClient(
+        @ApplicationContext context: Context
+    ): SignInClient {
+        return Identity.getSignInClient(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGoogleAuthUiClient(
+        @ApplicationContext context: Context,
+        signInClient: SignInClient
+    ): GoogleAuthUiClient {
+        return GoogleAuthUiClient(context, signInClient)
+    }
+
+
+
+
+
+}

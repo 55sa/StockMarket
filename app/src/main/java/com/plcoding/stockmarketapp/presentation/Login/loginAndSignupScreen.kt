@@ -17,6 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.gms.auth.api.identity.Identity
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
@@ -25,9 +27,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginAndSignUpScreen(
     navigator: DestinationsNavigator,
-    googleAuthUiClient: GoogleAuthUiClient
+//    googleAuthUiClient: GoogleAuthUiClient
 ) {
+
     val context = LocalContext.current
+    val googleAuthUiClient = GoogleAuthUiClient(
+        context = LocalContext.current,
+        oneTapClient = Identity.getSignInClient(LocalContext.current)
+    )
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
 
     var username by remember { mutableStateOf("") }
