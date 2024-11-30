@@ -27,78 +27,59 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginAndSignUpScreen(
     navigator: DestinationsNavigator,
-//    googleAuthUiClient: GoogleAuthUiClient
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
-
-    val context = LocalContext.current
-    val googleAuthUiClient = GoogleAuthUiClient(
-        context = LocalContext.current,
-        oneTapClient = Identity.getSignInClient(LocalContext.current)
-    )
-    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isSigningUp by remember { mutableStateOf(false) }
-    val isLoggedIn = remember { mutableStateOf(false) }
-    val passwordMinLength = 6
-
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
-
-    LaunchedEffect(Unit) {
-        val savedUsername = sharedPreferences.getString("username", null)
-        val savedPassword = sharedPreferences.getString("password", null)
-        val googleUser = googleAuthUiClient.getSignedInUser()
-        isLoggedIn.value = !savedUsername.isNullOrEmpty() || googleUser != null
-    }
-
-    val onSignInResult = rememberLauncherForActivityResult(
+    val state by viewModel.state.collectAsState()
+    val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        coroutineScope.launch {
-            val intent = result.data ?: return@launch
-            val signInResult = googleAuthUiClient.signInWithIntent(intent)
-            if (signInResult.data != null) {
-                isLoggedIn.value = true
-                snackbarHostState.showSnackbar("Welcome, ${signInResult.data.username}")
-            } else {
-                snackbarHostState.showSnackbar("Google Sign-In failed: ${signInResult.errorMessage}")
-            }
-        }
+        viewModel.handleGoogleSignInResult(result.data)
     }
+
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Top, // Adjusted to start from the top for the back button
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Back button at the top of the screen
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navigator.popBackStack() }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
             }
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = if (isSigningUp) "Sign Up" else "Login",
-                style = MaterialTheme.typography.h5,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp)
+                text = if (state.isLoggedIn) "Welcome Back" else if (state.username.isBlank()) "Sign Up" else "Login",
+                style = MaterialTheme.typography.h6,
+                fontWeight = FontWeight.Bold
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (!isLoggedIn.value) {
+        if (state.isLoggedIn) {
+            Text("Welcome, ${state.username.ifBlank { "Google User" }}!", style = MaterialTheme.typography.h5)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { viewModel.logout() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Logout")
+            }
+        } else {
             OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
+                value = state.username,
+                onValueChange = { viewModel.updateState(username = it) },
                 label = { Text("Username") },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -106,8 +87,8 @@ fun LoginAndSignUpScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
+                value = state.password,
+                onValueChange = { viewModel.updateState(password = it) },
                 label = { Text("Password") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
@@ -115,51 +96,16 @@ fun LoginAndSignUpScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = {
-                    if (isSigningUp) {
-                        // Sign-Up logic
-                        if (password.length >= passwordMinLength) {
-                            val editor = sharedPreferences.edit()
-                            editor.putString("username", username)
-                            editor.putString("password", password)
-                            editor.apply()
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Button(onClick = { viewModel.handleSignUp() }, modifier = Modifier.weight(1f)) {
+                    Text("Sign Up")
+                }
 
-                            isSigningUp = false
-                            username = ""
-                            password = ""
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Signup successful. Please log in.")
-                            }
-                        } else {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Password must be at least $passwordMinLength characters.")
-                            }
-                        }
-                    } else {
-                        // Login logic
-                        val savedUsername = sharedPreferences.getString("username", null)
-                        val savedPassword = sharedPreferences.getString("password", null)
+                Spacer(modifier = Modifier.width(8.dp))
 
-                        if (savedUsername.isNullOrEmpty() || savedPassword.isNullOrEmpty()) {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("You must sign up before logging in.")
-                            }
-                        } else if (username == savedUsername && password == savedPassword) {
-                            isLoggedIn.value = true
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Login successful.")
-                            }
-                        } else {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Invalid credentials. Please try again.")
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isSigningUp) "Sign Up" else "Login")
+                Button(onClick = { viewModel.handleLogin() }, modifier = Modifier.weight(1f)) {
+                    Text("Login")
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -167,13 +113,9 @@ fun LoginAndSignUpScreen(
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        val intentSender = googleAuthUiClient.signIn()
-                        if (intentSender != null) {
-                            onSignInResult.launch(
-                                IntentSenderRequest.Builder(intentSender).build()
-                            )
-                        } else {
-                            snackbarHostState.showSnackbar("Google Sign-In failed.")
+                        val intentSender = viewModel.googleSignIn()
+                        intentSender?.let {
+                            googleSignInLauncher.launch(IntentSenderRequest.Builder(it).build())
                         }
                     }
                 },
@@ -182,46 +124,10 @@ fun LoginAndSignUpScreen(
                 Text("Sign In with Google")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(
-                onClick = { isSigningUp = !isSigningUp }
-            ) {
-                Text(
-                    if (isSigningUp) "Already have an account? Login" else "Don't have an account? Sign Up"
-                )
-            }
-        } else {
-            val googleUser = googleAuthUiClient.getSignedInUser()
-            Text(
-                text = "Welcome, ${googleUser?.username ?: sharedPreferences.getString("username", "User")!!}!",
-                style = MaterialTheme.typography.h5,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        googleAuthUiClient.signOut()
-                        isLoggedIn.value = false
-                        username = ""
-                        password = ""
-                        snackbarHostState.showSnackbar("Logged out successfully.")
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Logout")
+            if (state.errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = state.errorMessage!!, color = MaterialTheme.colors.error)
             }
         }
-    }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        SnackbarHost(hostState = snackbarHostState)
     }
 }
