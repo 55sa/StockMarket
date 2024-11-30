@@ -1,7 +1,11 @@
 
 package com.plcoding.stockmarketapp.presentation.Login
 
-import android.provider.Settings.Global.putString
+import android.content.Context
+import android.content.IntentSender
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -9,24 +13,19 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import android.content.Context
-import android.content.SharedPreferences
-
-import androidx.compose.material.SnackbarHost
-import androidx.compose.material.SnackbarHostState
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
 @Destination
 @Composable
 fun LoginAndSignUpScreen(
-    navigator: DestinationsNavigator
+    navigator: DestinationsNavigator,
+    googleAuthUiClient: GoogleAuthUiClient
 ) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
@@ -40,9 +39,27 @@ fun LoginAndSignUpScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+
     LaunchedEffect(Unit) {
-        username = ""
-        password = ""
+        val savedUsername = sharedPreferences.getString("username", null)
+        val savedPassword = sharedPreferences.getString("password", null)
+        val googleUser = googleAuthUiClient.getSignedInUser()
+        isLoggedIn.value = !savedUsername.isNullOrEmpty() || googleUser != null
+    }
+
+    val onSignInResult = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        coroutineScope.launch {
+            val intent = result.data ?: return@launch
+            val signInResult = googleAuthUiClient.signInWithIntent(intent)
+            if (signInResult.data != null) {
+                isLoggedIn.value = true
+                snackbarHostState.showSnackbar("Welcome, ${signInResult.data.username}")
+            } else {
+                snackbarHostState.showSnackbar("Google Sign-In failed: ${signInResult.errorMessage}")
+            }
+        }
     }
 
     Column(
@@ -52,7 +69,6 @@ fun LoginAndSignUpScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -95,8 +111,8 @@ fun LoginAndSignUpScreen(
             Button(
                 onClick = {
                     if (isSigningUp) {
+                        // Sign-Up logic
                         if (password.length >= passwordMinLength) {
-                            // Save credentials to SharedPreferences
                             val editor = sharedPreferences.edit()
                             editor.putString("username", username)
                             editor.putString("password", password)
@@ -114,12 +130,16 @@ fun LoginAndSignUpScreen(
                             }
                         }
                     } else {
-                        val savedUsername = sharedPreferences.getString("username", "")
-                        val savedPassword = sharedPreferences.getString("password", "")
-                        if (username == savedUsername && password == savedPassword) {
+                        // Login logic
+                        val savedUsername = sharedPreferences.getString("username", null)
+                        val savedPassword = sharedPreferences.getString("password", null)
+
+                        if (savedUsername.isNullOrEmpty() || savedPassword.isNullOrEmpty()) {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("You must sign up before logging in.")
+                            }
+                        } else if (username == savedUsername && password == savedPassword) {
                             isLoggedIn.value = true
-                            username = ""
-                            password = ""
                             coroutineScope.launch {
                                 snackbarHostState.showSnackbar("Login successful.")
                             }
@@ -140,7 +160,14 @@ fun LoginAndSignUpScreen(
             Button(
                 onClick = {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Google sign-in clicked. Implement the logic.")
+                        val intentSender = googleAuthUiClient.signIn()
+                        if (intentSender != null) {
+                            onSignInResult.launch(
+                                IntentSenderRequest.Builder(intentSender).build()
+                            )
+                        } else {
+                            snackbarHostState.showSnackbar("Google Sign-In failed.")
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -158,8 +185,9 @@ fun LoginAndSignUpScreen(
                 )
             }
         } else {
+            val googleUser = googleAuthUiClient.getSignedInUser()
             Text(
-                text = "Welcome, ${sharedPreferences.getString("username", "User")!!}!",
+                text = "Welcome, ${googleUser?.username ?: sharedPreferences.getString("username", "User")!!}!",
                 style = MaterialTheme.typography.h5,
                 fontWeight = FontWeight.Bold
             )
@@ -168,7 +196,13 @@ fun LoginAndSignUpScreen(
 
             Button(
                 onClick = {
-                    isLoggedIn.value = false
+                    coroutineScope.launch {
+                        googleAuthUiClient.signOut()
+                        isLoggedIn.value = false
+                        username = ""
+                        password = ""
+                        snackbarHostState.showSnackbar("Logged out successfully.")
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -184,7 +218,3 @@ fun LoginAndSignUpScreen(
         SnackbarHost(hostState = snackbarHostState)
     }
 }
-
-
-
-

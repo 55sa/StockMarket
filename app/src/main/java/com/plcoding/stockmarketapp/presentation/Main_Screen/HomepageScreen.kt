@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
-import com.plcoding.stockmarketapp.presentation.Login.LoginAndSignUpScreen
+
 import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
 import com.plcoding.stockmarketapp.presentation.company_info.StockChart
 
@@ -35,7 +35,7 @@ import com.plcoding.stockmarketapp.presentation.company_listings.CompanyItem
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyInfoScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.HomePageScreenDestination
-import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
+
 import com.plcoding.stockmarketapp.util.Resource
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -67,7 +67,7 @@ fun HomePageScreen(
         scaffoldState = scaffoldState,
         bottomBar = {
             BottomNavigationBar(
-                onProfileClick = { navigator.navigate(LoginAndSignUpScreenDestination) }
+                onProfileClick = {  }
             )
         }
     ) { innerPadding ->
