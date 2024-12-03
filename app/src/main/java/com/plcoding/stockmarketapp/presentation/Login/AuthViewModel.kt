@@ -97,7 +97,13 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            // Clear user data from SharedPreferences
+            sharedPreferences.edit().clear().apply()
+
+            // Sign out from Google and reset the state
             googleAuthUiClient.signOut()
+
+            // Update the state to reset all values
             _state.value = AuthState()
         }
     }
