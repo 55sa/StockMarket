@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.auth.api.identity.Identity
+import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
@@ -38,95 +39,95 @@ fun LoginAndSignUpScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top, // Adjusted to start from the top for the back button
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Back button at the top of the screen
-        Row(
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(
+                navigator = navigator
+            )
+        }
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(onClick = { navigator.popBackStack() }) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colors.primary)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = if (state.isLoggedIn) "Welcome Back" else if (state.username.isBlank()) "Sign Up" else "Login",
                 style = MaterialTheme.typography.h6,
                 fontWeight = FontWeight.Bold
             )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (state.isLoggedIn) {
-            Text("Welcome, ${state.username.ifBlank { "Google User" }}!", style = MaterialTheme.typography.h5)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = { viewModel.logout() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Logout")
-            }
-        } else {
-            OutlinedTextField(
-                value = state.username,
-                onValueChange = { viewModel.updateState(username = it) },
-                label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (state.isLoggedIn) {
+                Text(
+                    text = "Welcome, ${state.username.ifBlank { "Google User" }}!",
+                    style = MaterialTheme.typography.h5
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = state.password,
-                onValueChange = { viewModel.updateState(password = it) },
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Button(onClick = { viewModel.handleSignUp() }, modifier = Modifier.weight(1f)) {
-                    Text("Sign Up")
+                Button(
+                    onClick = { viewModel.logout() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Logout")
                 }
+            } else {
+                OutlinedTextField(
+                    value = state.username,
+                    onValueChange = { viewModel.updateState(username = it) },
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Button(onClick = { viewModel.handleLogin() }, modifier = Modifier.weight(1f)) {
-                    Text("Login")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        val intentSender = viewModel.googleSignIn()
-                        intentSender?.let {
-                            googleSignInLauncher.launch(IntentSenderRequest.Builder(it).build())
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Sign In with Google")
-            }
-
-            if (state.errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = state.errorMessage!!, color = MaterialTheme.colors.error)
+
+                OutlinedTextField(
+                    value = state.password,
+                    onValueChange = { viewModel.updateState(password = it) },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Button(onClick = { viewModel.handleSignUp() }, modifier = Modifier.weight(1f)) {
+                        Text("Sign Up")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(onClick = { viewModel.handleLogin() }, modifier = Modifier.weight(1f)) {
+                        Text("Login")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            val intentSender = viewModel.googleSignIn()
+                            intentSender?.let {
+                                googleSignInLauncher.launch(IntentSenderRequest.Builder(it).build())
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Sign In with Google")
+                }
+
+                if (state.errorMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = state.errorMessage!!, color = MaterialTheme.colors.error)
+                }
             }
         }
     }

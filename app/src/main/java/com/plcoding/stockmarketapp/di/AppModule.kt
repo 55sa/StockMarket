@@ -52,7 +52,7 @@ object AppModule {
             .addInterceptor { chain ->
                 val request = chain.request()
                     .newBuilder()
-                    .addHeader("Authorization", "Bearer "+apiKey)
+                    .addHeader("Authorization", "Bearer "+ apiKey)
                     .addHeader("Content-Type", "application/json")
                     .build()
                 chain.proceed(request)

@@ -168,7 +168,7 @@ fun CompanyInfoScreen(
                 state.gptmesg?.let { gptMessage ->
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "GPT Analysis",
+                        text = "AI Buffett Analysis:",
                         style = MaterialTheme.typography.h6.copy(
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Serif

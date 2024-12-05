@@ -46,7 +46,7 @@ class HomeViewModel @Inject constructor(
     fun removeFromWatchlist(symbol: String) {
         viewModelScope.launch {
             repository.deleteFromWatchList(symbol)
-            loadWatchlist() // 删除后刷新列表
+            loadWatchlist()
         }
     }
 

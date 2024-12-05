@@ -1,5 +1,6 @@
 package com.plcoding.stockmarketapp.presentation.mainscreen
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
@@ -27,6 +28,8 @@ import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import com.plcoding.stockmarketapp.presentation.Login.AuthViewModel
+import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
 
 
 import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
@@ -43,6 +46,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Destination(start = true)
@@ -59,18 +63,21 @@ fun HomePageScreen(
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
 
-    // 每次打开页面时刷新数据
     LaunchedEffect(Unit) {
-        viewModel.loadWatchlist()
-        viewModel.loadNasdaqData()
+
+            viewModel.loadWatchlist()
+            viewModel.loadNasdaqData()
+
     }
+
+
+
+
 
     Scaffold(
         scaffoldState = scaffoldState,
         bottomBar = {
-            BottomNavigationBar(
-                onProfileClick = { navigator.navigate(LoginAndSignUpScreenDestination) }
-            )
+            BottomNavigationBar(navigator = navigator)
         }
     ) { innerPadding ->
         Column(
@@ -79,7 +86,7 @@ fun HomePageScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            // 标题行和搜索按钮
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -87,7 +94,7 @@ fun HomePageScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.weight(1f)) // 居中对齐
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = "StockEasy",
                     style = MaterialTheme.typography.h4.copy(
@@ -114,13 +121,17 @@ fun HomePageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 纳斯达克数据部分
+
             Text(
-                text = "Nasdaq Data",
+                text = "TESLA",
                 style = MaterialTheme.typography.h6,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
+
+
+
+
 
             when (intradayData) {
                 is Resource.Loading -> {
@@ -154,7 +165,7 @@ fun HomePageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Watchlist 部分
+
             val companies = (watchlist as? Resource.Success<List<CompanyListing>>)?.data.orEmpty()
             val filteredCompanies = if (searchQuery.isBlank()) {
                 companies
@@ -180,7 +191,7 @@ fun HomePageScreen(
                     val dismissState = rememberDismissState(
                         confirmStateChange = {
                             if (it == DismissValue.DismissedToEnd) {
-                                // 删除逻辑
+
                                 scope.launch {
                                     viewModel.removeFromWatchlist(company.symbol)
                                     viewModel.loadWatchlist()
@@ -194,7 +205,7 @@ fun HomePageScreen(
                     SwipeToDismiss(
                         state = dismissState,
                         background = {
-                            // 增加动画和美观设计的背景
+
                             val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
                             val alignment = if (direction == DismissDirection.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
                             val color by animateColorAsState(
@@ -241,35 +252,3 @@ fun HomePageScreen(
 }
 
 
-@Composable
-fun BottomNavigationBar(
-    onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    BottomNavigation(
-        backgroundColor = MaterialTheme.colors.background, // 根据系统颜色模式动态变化
-        contentColor = MaterialTheme.colors.primary, // 根据系统颜色变化
-        modifier = modifier
-    ) {
-        BottomNavigationItem(
-            icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Home") },
-            selected = true,
-            onClick = {}
-        )
-        BottomNavigationItem(
-            icon = { Icon(imageVector = Icons.Default.Folder, contentDescription = "Folder") },
-            selected = false,
-            onClick = {}
-        )
-        BottomNavigationItem(
-            icon = { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notifications") },
-            selected = false,
-            onClick = {}
-        )
-        BottomNavigationItem(
-            icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Profile") },
-            selected = false,
-            onClick = onProfileClick
-        )
-    }
-}
