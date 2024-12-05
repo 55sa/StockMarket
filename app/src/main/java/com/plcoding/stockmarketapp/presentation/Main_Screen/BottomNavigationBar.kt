@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.plcoding.stockmarketapp.presentation.destinations.HomePageScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
+import com.plcoding.stockmarketapp.presentation.destinations.TestScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
@@ -34,7 +35,7 @@ fun BottomNavigationBar(
         BottomNavigationItem(
             icon = { Icon(imageVector = Icons.Default.Folder, contentDescription = "Folder") },
             selected = false,
-            onClick = {}
+            onClick = {navigator.navigate(TestScreenDestination)}
         )
         BottomNavigationItem(
             icon = { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notifications") },
