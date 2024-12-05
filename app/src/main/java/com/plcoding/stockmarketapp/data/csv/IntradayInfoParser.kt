@@ -17,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class IntradayInfoParser @Inject constructor(): CSVParser<IntradayInfo> {
+class IntradayInfoParser @Inject constructor() : CSVParser<IntradayInfo> {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun parse(stream: InputStream): List<IntradayInfo> {
@@ -25,18 +25,24 @@ class IntradayInfoParser @Inject constructor(): CSVParser<IntradayInfo> {
         return withContext(Dispatchers.IO) {
             csvReader
                 .readAll()
-                .drop(1)
+                .drop(1) // Skip the header
                 .mapNotNull { line ->
                     val timestamp = line.getOrNull(0) ?: return@mapNotNull null
-                    val close = line.getOrNull(4) ?: return@mapNotNull null
-                    val dto = IntradayInfoDto(timestamp, close.toDouble())
+                    val close = line.getOrNull(4)?.toDoubleOrNull() ?: return@mapNotNull null
+                    val volume = line.getOrNull(5)?.toDoubleOrNull() ?: 0.0
+                    val low = line.getOrNull(3)?.toDoubleOrNull() ?: 0.0
+                    val high = line.getOrNull(2)?.toDoubleOrNull() ?: 0.0
+
+                    // Convert to DTO and map to domain model
+                    val dto = IntradayInfoDto(timestamp, close, volume, low, high)
                     dto.toIntradayInfo()
                 }
                 .filter {
-                    it.date.dayOfMonth == LocalDate.now().minusDays(4).dayOfMonth
+                    // Filter by the day you need (e.g., 4 days ago)
+                    it.date.toLocalDate() == LocalDate.now().minusDays(1)
                 }
                 .sortedBy {
-                    it.date.hour
+                    it.date.hour // Sort by hour
                 }
                 .also {
                     csvReader.close()

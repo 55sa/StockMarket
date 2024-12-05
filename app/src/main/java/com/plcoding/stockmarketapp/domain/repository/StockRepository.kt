@@ -27,4 +27,14 @@ interface StockRepository {
     suspend fun isDatabaseInitialized(): Boolean
 
     suspend fun initializeDatabaseFromRemote(): Resource<Unit>
+
+    suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String>
+
+    suspend fun addToWatchList(symbol: String): Unit
+
+    suspend fun deleteFromWatchList(symbol: String): Unit
+
+    suspend fun isSymbolInWatchlist(symbol: String): Boolean
+
+    suspend fun getUserFileUrl(userId: String): String
 }

@@ -1,13 +1,20 @@
 package com.plcoding.stockmarketapp.data.repository
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import com.google.firebase.database.FirebaseDatabase
 import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.csv.CSVParser
 import com.plcoding.stockmarketapp.data.csv.CompanyListingsParser
 import com.plcoding.stockmarketapp.data.local.StockDatabase
+import com.plcoding.stockmarketapp.data.local.WatchlistEntity
 import com.plcoding.stockmarketapp.data.mapper.toCompanyInfo
 import com.plcoding.stockmarketapp.data.mapper.toCompanyListing
 import com.plcoding.stockmarketapp.data.mapper.toCompanyListingEntity
+import com.plcoding.stockmarketapp.data.remote.GptApi
 import com.plcoding.stockmarketapp.data.remote.StockApi
+import com.plcoding.stockmarketapp.data.remote.dto.GptRequest
+import com.plcoding.stockmarketapp.data.remote.dto.Message
 import com.plcoding.stockmarketapp.domain.model.CompanyInfo
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
@@ -15,20 +22,25 @@ import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.util.Resource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
 import java.io.InputStreamReader
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class StockRepositoryImpl @Inject constructor(
     private val api: StockApi,
+    private val gptApi: GptApi,
     private val db: StockDatabase,
     private val companyListingsParser: CSVParser<CompanyListing>,
     private val intradayInfoParser: CSVParser<IntradayInfo>,
 ): StockRepository {
 
+    private val database = FirebaseDatabase.getInstance().reference
     private val dao = db.stockdao
     private val watchDao = db.watchdao
 
@@ -142,5 +154,82 @@ class StockRepositoryImpl @Inject constructor(
             Resource.Error("Failed to initialize database: ${e.message}")
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String> {
+        return try {
+            // Build the GPT request
+            val tradesSummary = tradeInfoList.joinToString("\n") {
+                "Timestamp: ${it.date}, Close: ${it.close}"
+            }
+            val prompt = """
+            You are a financial analyst. Analyze the following intraday trading data and provide insights, such as patterns, anomalies, or trends in few sentences:
+            
+            $tradesSummary
+        """.trimIndent()
+
+            val gptRequest = GptRequest(
+                model = "gpt-3.5-turbo", // Ensure tshe model is included
+                messages = listOf(Message(role = "user", content = prompt)),
+                max_tokens = 200,
+                temperature = 0.7
+            )
+
+            // Send request to GPT API
+            val response = gptApi.analyzeIntradayInfo(gptRequest)
+
+            val jsonResponse = response.string()
+            val content = extractContentFromJson(jsonResponse)
+
+
+            Resource.Success(content) // Convert `ResponseBody` to string
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error("Failed to analyze with GPT: ${e.message}")
+        }
+    }
+
+    override suspend fun addToWatchList(symbol: String) {
+        watchDao.insertwatch(
+            WatchlistEntity(symbol = symbol)
+        )
+    }
+
+    override suspend fun deleteFromWatchList(symbol: String) {
+        watchDao.deleteBySymbol(symbol)
+    }
+
+    override suspend fun isSymbolInWatchlist(symbol: String): Boolean {
+        return watchDao.isSymbolInWatchlist(symbol)
+    }
+
+    override suspend fun getUserFileUrl(userId: String): String {
+        return try {
+            val snapshot = database.child(userId).get().await()
+            snapshot.getValue(String::class.java).toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "*"
+        }
+    }
+
+
+    private fun extractContentFromJson(jsonResponse: String): String {
+        return try {
+            val root = JSONObject(jsonResponse)
+            val choices = root.getJSONArray("choices")
+            if (choices.length() > 0) {
+                val firstChoice = choices.getJSONObject(0)
+                val message = firstChoice.getJSONObject("message")
+                message.getString("content")
+            } else {
+                "No content found"
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "Failed to parse content"
+        }
+    }
+
 
 }
