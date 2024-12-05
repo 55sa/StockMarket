@@ -16,25 +16,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.Login.AuthViewModel
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
 import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
 import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import retrofit2.http.Url
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @Destination
 @Composable
 fun TestScreen(
     navigator: DestinationsNavigator,
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    testViewModel: TestViewModel = hiltViewModel()
 ) {
     val state by authViewModel.state.collectAsState()
-
-    LaunchedEffect(state.isLoggedIn) {
-
-    }
+    val userFileUrl by testViewModel.userFileUrl.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -43,36 +42,55 @@ fun TestScreen(
             )
         }
     ) { innerPadding ->
-        if (state.isLoggedIn) {
-            SuccessfulPageContent(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            )
+        if (!state.isLoggedIn) {
+            // Redirect to login if user is not logged in
+            LaunchedEffect(Unit) {
+                navigator.navigate(LoginAndSignUpScreenDestination)
+            }
         } else {
-            // Placeholder for unauthenticated state until redirection happens
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Redirecting to Login...")
+            // Trigger fetching the file URL once the user ID is available
+            LaunchedEffect(state.userId) {
+                state.userId?.let {
+                    testViewModel.fetchUserFileUrl(it)
+                }
+            }
+
+            when {
+                userFileUrl == null -> {
+                    // Loading or error state
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Loading user data...")
+                    }
+                }
+                else -> {
+                    // Show content when the URL is loaded
+                    SuccessfulPageContent(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        url = userFileUrl ?: "Error loading file URL"
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun SuccessfulPageContent(modifier: Modifier = Modifier) {
+fun SuccessfulPageContent(modifier: Modifier = Modifier, url: String) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to the Trading Analysis Page!",
+            text = url,
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )

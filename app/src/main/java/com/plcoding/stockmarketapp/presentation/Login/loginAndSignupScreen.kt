@@ -64,7 +64,7 @@ fun LoginAndSignUpScreen(
 
             if (state.isLoggedIn) {
                 Text(
-                    text = "Welcome, ${state.username.ifBlank { "Google User" }}!",
+                    text = "Welcome, ${state.username}!",
                     style = MaterialTheme.typography.h5
                 )
 

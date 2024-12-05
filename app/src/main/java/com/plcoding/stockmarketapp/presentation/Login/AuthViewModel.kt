@@ -29,10 +29,12 @@ class AuthViewModel @Inject constructor(
 
     private fun loadUserState() {
         val savedUsername = sharedPreferences.getString("username", null)
+        val savedUserId = sharedPreferences.getString("userId", null)
         val googleUser = googleAuthUiClient.getSignedInUser()
         _state.value = AuthState(
             isLoggedIn = !savedUsername.isNullOrEmpty() || googleUser != null,
-            username = savedUsername.orEmpty()
+            username = savedUsername.orEmpty(),
+            userId = savedUserId.orEmpty()
         )
     }
 
@@ -65,7 +67,8 @@ class AuthViewModel @Inject constructor(
         val savedPassword = sharedPreferences.getString("password", null)
 
         if (username == savedUsername && password == savedPassword) {
-            _state.value = _state.value.copy(isLoggedIn = true, errorMessage = null)
+            sharedPreferences.edit().putString("userId", "local_user").apply() // Add a userId for local login
+            _state.value = _state.value.copy(isLoggedIn = true, errorMessage = null, userId = "local_user")
         } else {
             _state.value = _state.value.copy(errorMessage = "Invalid credentials. Please try again.")
         }
@@ -84,12 +87,28 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val signInResult = intentData?.let { googleAuthUiClient.signInWithIntent(it) }
+
             if (signInResult != null && signInResult.data != null) {
-                _state.value = AuthState(isLoggedIn = true, errorMessage = null)
+                val userData = signInResult.data
+
+                // Save username and userId in SharedPreferences
+                sharedPreferences.edit().apply {
+                    putString("username", userData.username)
+                    putString("userId", userData.userId)
+                    apply()
+                }
+
+                _state.value = _state.value.copy(
+                    isLoggedIn = true,
+                    userId = userData.userId,
+                    username = userData.username.orEmpty(),
+                    isLoading = false,
+                    errorMessage = null
+                )
             } else {
                 _state.value = _state.value.copy(
-                    errorMessage = signInResult?.errorMessage,
-                    isLoading = false
+                    isLoading = false,
+                    errorMessage = signInResult?.errorMessage
                 )
             }
         }

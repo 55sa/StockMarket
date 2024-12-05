@@ -35,4 +35,6 @@ interface StockRepository {
     suspend fun deleteFromWatchList(symbol: String): Unit
 
     suspend fun isSymbolInWatchlist(symbol: String): Boolean
+
+    suspend fun getUserFileUrl(userId: String): String
 }

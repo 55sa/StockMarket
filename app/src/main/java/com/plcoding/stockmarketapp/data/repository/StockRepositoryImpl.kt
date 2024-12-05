@@ -2,6 +2,7 @@ package com.plcoding.stockmarketapp.data.repository
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.google.firebase.database.FirebaseDatabase
 import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.csv.CSVParser
 import com.plcoding.stockmarketapp.data.csv.CompanyListingsParser
@@ -21,6 +22,7 @@ import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.util.Resource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
@@ -38,6 +40,7 @@ class StockRepositoryImpl @Inject constructor(
     private val intradayInfoParser: CSVParser<IntradayInfo>,
 ): StockRepository {
 
+    private val database = FirebaseDatabase.getInstance().reference
     private val dao = db.stockdao
     private val watchDao = db.watchdao
 
@@ -198,6 +201,16 @@ class StockRepositoryImpl @Inject constructor(
 
     override suspend fun isSymbolInWatchlist(symbol: String): Boolean {
         return watchDao.isSymbolInWatchlist(symbol)
+    }
+
+    override suspend fun getUserFileUrl(userId: String): String {
+        return try {
+            val snapshot = database.child(userId).get().await()
+            snapshot.getValue(String::class.java).toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "*"
+        }
     }
 
 
