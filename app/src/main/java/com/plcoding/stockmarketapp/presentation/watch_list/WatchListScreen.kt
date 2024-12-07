@@ -31,14 +31,15 @@ fun WatchListScreen(
 
 
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(state.companies) { company ->
-                    CompanyItem(
-                        company = company,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(state.companies) { company ->
+                CompanyItem(
+                    company = company,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }
+}
+
 

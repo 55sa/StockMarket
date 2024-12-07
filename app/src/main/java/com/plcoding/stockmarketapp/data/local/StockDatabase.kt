@@ -8,11 +8,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [CompanyListingEntity::class, WatchlistEntity::class],
     version = 2,
-   exportSchema = false
+    exportSchema = false
 )
 abstract class StockDatabase: RoomDatabase() {
     abstract val stockdao: StockDao
-   abstract val watchdao: WatchDao
+    abstract val watchdao: WatchDao
 
     companion object {
 
@@ -25,6 +25,6 @@ abstract class StockDatabase: RoomDatabase() {
             )
         """.trimIndent())
             }
-    }
-}}
+        }
+    }}
 

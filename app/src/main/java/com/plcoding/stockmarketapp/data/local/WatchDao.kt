@@ -19,13 +19,15 @@ interface WatchDao {
     @Query("SELECT * FROM watchlist")
     suspend fun getAllSymbols(): List<WatchlistEntity>
 
-    // Delete a symbol by its ID
-    @Query("DELETE FROM watchlist WHERE id = :id")
-    suspend fun deleteSymbolById(id: Int)
+    // Delete a symbol by its Symbol
+    @Query("DELETE FROM watchlist WHERE symbol = :symbol")
+    suspend fun deleteBySymbol(symbol: String)
 
     // Clear the entire watchlist
     @Query("DELETE FROM watchlist")
     suspend fun clearWatchlist()
+
+
 
     @Query("""
     SELECT * FROM watchlist
@@ -33,6 +35,11 @@ interface WatchDao {
     ON watchlist.symbol = companylistingentity.symbol
 """)
     suspend fun getWatchlistWithDetails(): List<CompanyListingEntity>
+
+
+    // Check if a symbol exists in the watchlist
+    @Query("SELECT COUNT(*) > 0 FROM watchlist WHERE symbol = :symbol")
+    suspend fun isSymbolInWatchlist(symbol: String): Boolean
 
 
 }
