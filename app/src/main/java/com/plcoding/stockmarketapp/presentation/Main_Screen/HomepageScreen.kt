@@ -65,8 +65,8 @@ fun HomePageScreen(
 
     LaunchedEffect(Unit) {
 
-            viewModel.loadWatchlist()
-            viewModel.loadNasdaqData()
+        viewModel.loadWatchlist()
+        viewModel.loadNasdaqData()
 
     }
 
@@ -250,5 +250,4 @@ fun HomePageScreen(
         }
     }
 }
-
 
