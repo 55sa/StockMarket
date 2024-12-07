@@ -15,3 +15,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "StockMarketApp"
 include ':app'
+
+
+
+
