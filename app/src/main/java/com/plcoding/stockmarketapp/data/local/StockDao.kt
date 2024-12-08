@@ -8,15 +8,15 @@ import androidx.room.Query
 @Dao
 interface StockDao {
     @Query("SELECT COUNT(*) FROM companylistingentity")
-    suspend fun getCompanyListingCount(): Int
+    fun getCompanyListingCount(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCompanyListings(
+     fun insertCompanyListings(
         companyListingEntities: List<CompanyListingEntity>
-    )
+    ): List<Long> // 修改返回类型为 List<Long>
 
     @Query("DELETE FROM companylistingentity")
-    suspend fun clearCompanyListings()
+     fun clearCompanyListings(): Int // 修改返回类型为 Int 或 void
 
     @Query(
         """
@@ -26,8 +26,8 @@ interface StockDao {
                 UPPER(:query) == symbol
         """
     )
-    suspend fun searchCompanyListing(query: String): List<CompanyListingEntity>
+     fun searchCompanyListing(query: String): List<CompanyListingEntity>
 
     @Query("SELECT * FROM companylistingentity WHERE symbol = :symbol")
-    suspend fun findBySymbol(symbol: String): CompanyListingEntity
+     fun findBySymbol(symbol: String): CompanyListingEntity
 }
