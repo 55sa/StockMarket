@@ -20,9 +20,11 @@ import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.util.Resource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
@@ -47,50 +49,57 @@ class StockRepositoryImpl @Inject constructor(
     override suspend fun getCompanyListings(
         fetchFromRemote: Boolean,
         query: String
-    ): Flow<Resource<List<CompanyListing>>> {
-        return flow {
-            emit(Resource.Loading(true))
-            val localListings = dao.searchCompanyListing(query)
-            emit(Resource.Success(
-                data = localListings.map { it.toCompanyListing() }
-            ))
+    ): Flow<Resource<List<CompanyListing>>> = flow {
+        emit(Resource.Loading(true))
 
-            val isDbEmpty = localListings.isEmpty() && query.isBlank()
-            val shouldJustLoadFromCache = !isDbEmpty && !fetchFromRemote
-            if(shouldJustLoadFromCache) {
-                emit(Resource.Loading(false))
-                return@flow
-            }
-            val remoteListings = try {
-                val response = api.getListings()
-                companyListingsParser.parse(response.byteStream())
-            } catch(e: IOException) {
-                e.printStackTrace()
-                emit(Resource.Error("Couldn't load data"))
-                null
-            } catch (e: HttpException) {
-                e.printStackTrace()
-                emit(Resource.Error("Couldn't load data"))
-                null
-            }
+        // Move database operation to Dispatchers.IO
+        val localListings = withContext(Dispatchers.IO) {
+            dao.searchCompanyListing(query)
+        }
 
-            remoteListings?.let { listings ->
+        emit(Resource.Success(
+            data = localListings.map { it.toCompanyListing() }
+        ))
+
+        val isDbEmpty = localListings.isEmpty() && query.isBlank()
+        val shouldJustLoadFromCache = !isDbEmpty && !fetchFromRemote
+        if (shouldJustLoadFromCache) {
+            emit(Resource.Loading(false))
+            return@flow
+        }
+
+        val remoteListings = try {
+            val response = api.getListings()
+            companyListingsParser.parse(response.byteStream())
+        } catch (e: IOException) {
+            e.printStackTrace()
+            emit(Resource.Error("Couldn't load data"))
+            null
+        } catch (e: HttpException) {
+            e.printStackTrace()
+            emit(Resource.Error("Couldn't load data"))
+            null
+        }
+
+        remoteListings?.let { listings ->
+            withContext(Dispatchers.IO) {
                 dao.clearCompanyListings()
                 dao.insertCompanyListings(
                     listings.map { it.toCompanyListingEntity() }
                 )
-                emit(Resource.Success(
-                    data = dao
-                        .searchCompanyListing("")
-                        .map { it.toCompanyListing() }
-                ))
-                emit(Resource.Loading(false))
             }
+            emit(Resource.Success(
+                data = dao
+                    .searchCompanyListing("")
+                    .map { it.toCompanyListing() }
+            ))
+            emit(Resource.Loading(false))
         }
     }
 
-    override suspend fun getIntradayInfo(symbol: String): Resource<List<IntradayInfo>> {
-        return try {
+
+    override suspend fun getIntradayInfo(symbol: String): Resource<List<IntradayInfo>> = withContext(Dispatchers.IO) {
+         try {
             val response = api.getIntradayInfo(symbol)
             val results = intradayInfoParser.parse(response.byteStream())
             Resource.Success(results)
@@ -107,8 +116,8 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getCompanyInfo(symbol: String): Resource<CompanyInfo> {
-        return try {
+    override suspend fun getCompanyInfo(symbol: String): Resource<CompanyInfo> = withContext(Dispatchers.IO) {
+         try {
             val result = api.getCompanyInfo(symbol)
             Resource.Success(result.toCompanyInfo())
         } catch(e: IOException) {
@@ -124,8 +133,8 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>> {
-        return try {
+    override suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>> = withContext(Dispatchers.IO) {
+        try {
             val watchlistWithDetails = watchDao.getWatchlistWithDetails()
             val mappedResult = watchlistWithDetails.map { it.toCompanyListing() }
             Resource.Success(mappedResult)
@@ -135,12 +144,14 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun isDatabaseInitialized(): Boolean {
-        return dao.getCompanyListingCount() > 0
+
+    override suspend fun isDatabaseInitialized(): Boolean = withContext(Dispatchers.IO) {
+        dao.getCompanyListingCount() > 0
     }
 
-    override suspend fun initializeDatabaseFromRemote(): Resource<Unit> {
-        return try {
+
+    override suspend fun initializeDatabaseFromRemote(): Resource<Unit> = withContext(Dispatchers.IO) {
+         try {
             val response = api.getListings()
             val parsedListings = companyListingsParser.parse(response.byteStream())
 
@@ -156,8 +167,8 @@ class StockRepositoryImpl @Inject constructor(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String> {
-        return try {
+    override suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String> = withContext(Dispatchers.IO) {
+         try {
             // Build the GPT request
             val tradesSummary = tradeInfoList.joinToString("\n") {
                 "Timestamp: ${it.date}, Close: ${it.close}"
@@ -189,22 +200,22 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addToWatchList(symbol: String) {
+    override suspend fun addToWatchList(symbol: String) = withContext(Dispatchers.IO) {
         watchDao.insertwatch(
             WatchlistEntity(symbol = symbol)
         )
     }
 
-    override suspend fun deleteFromWatchList(symbol: String) {
+    override suspend fun deleteFromWatchList(symbol: String): Unit = withContext(Dispatchers.IO) {
         watchDao.deleteBySymbol(symbol)
     }
 
-    override suspend fun isSymbolInWatchlist(symbol: String): Boolean {
-        return watchDao.isSymbolInWatchlist(symbol)
+    override suspend fun isSymbolInWatchlist(symbol: String): Boolean = withContext(Dispatchers.IO) {
+         watchDao.isSymbolInWatchlist(symbol)
     }
 
-    override suspend fun getUserFileUrl(userId: String): String {
-        return try {
+    override suspend fun getUserFileUrl(userId: String): String = withContext(Dispatchers.IO) {
+       try {
             val snapshot = database.child(userId).get().await()
             snapshot.getValue(String::class.java).toString()
         } catch (e: Exception) {
@@ -214,8 +225,8 @@ class StockRepositoryImpl @Inject constructor(
     }
 
 
-    private fun extractContentFromJson(jsonResponse: String): String {
-        return try {
+    private suspend fun extractContentFromJson(jsonResponse: String): String = withContext(Dispatchers.IO) {
+       try {
             val root = JSONObject(jsonResponse)
             val choices = root.getJSONArray("choices")
             if (choices.length() > 0) {

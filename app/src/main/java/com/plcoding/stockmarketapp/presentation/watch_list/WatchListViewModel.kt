@@ -51,6 +51,9 @@ class WatchListViewModel @Inject constructor(
 
                 )
             }
+            is Resource.Loading -> {
+                state = state.copy(isLoading = result.isLoading)
+            }
         }
     }
 

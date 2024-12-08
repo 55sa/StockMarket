@@ -9,37 +9,34 @@ import androidx.room.Query
 interface WatchDao {
     // Insert a single symbol into the database
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertwatch(entity: WatchlistEntity)
+     fun insertwatch(entity: WatchlistEntity)
 
     // Insert multiple symbols into the database
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSymbols(symbols: List<WatchlistEntity>)
+     fun insertSymbols(symbols: List<WatchlistEntity>)
 
     // Query all symbols in the watchlist
-    @Query("SELECT * FROM watchlist")
-    suspend fun getAllSymbols(): List<WatchlistEntity>
+    @Query("SELECT symbol FROM watchlist")
+     fun getAllSymbols(): List<String>
 
-    // Delete a symbol by its Symbol
+    // Delete a symbol by its symbol
     @Query("DELETE FROM watchlist WHERE symbol = :symbol")
-    suspend fun deleteBySymbol(symbol: String)
+     fun deleteBySymbol(symbol: String): Int // Return number of rows affected
 
     // Clear the entire watchlist
     @Query("DELETE FROM watchlist")
-    suspend fun clearWatchlist()
+     fun clearWatchlist(): Int // Return number of rows affected
 
-
-
+    // Get watchlist details by joining with company listing entity
     @Query("""
-    SELECT * FROM watchlist
-    INNER JOIN companylistingentity
-    ON watchlist.symbol = companylistingentity.symbol
-""")
-    suspend fun getWatchlistWithDetails(): List<CompanyListingEntity>
-
+        SELECT * 
+        FROM watchlist
+        INNER JOIN companylistingentity
+        ON watchlist.symbol = companylistingentity.symbol
+    """)
+     fun getWatchlistWithDetails(): List<CompanyListingEntity>
 
     // Check if a symbol exists in the watchlist
     @Query("SELECT COUNT(*) > 0 FROM watchlist WHERE symbol = :symbol")
-    suspend fun isSymbolInWatchlist(symbol: String): Boolean
-
-
+    fun isSymbolInWatchlist(symbol: String): Boolean
 }
