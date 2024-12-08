@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Destination(start = true)
+//@Destination
 @Composable
 fun HomePageScreen(
     navigator: DestinationsNavigator,
