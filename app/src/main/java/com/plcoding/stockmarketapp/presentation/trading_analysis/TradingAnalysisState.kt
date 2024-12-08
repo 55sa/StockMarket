@@ -5,7 +5,7 @@ import com.plcoding.stockmarketapp.domain.model.TradingDataEntry
 
 data class TradingAnalysisState (
     var tradingData: List<TradingDataEntry>  = emptyList(),
-    val showDailyVolumeTrend: Boolean = false,
+    val showDailyVolumeTrend: Boolean = true,
     val showTransactionAmountDistribution: Boolean = false,
     val showUserActivePeriods: Boolean = false,
     val showUserCategoryPreferences: Boolean = false,
