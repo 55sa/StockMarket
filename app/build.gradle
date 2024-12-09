@@ -120,6 +120,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
     implementation("com.google.firebase:firebase-database:20.0.4")
 
-    implementation ("io.github.ehsannarmani:compose-charts:0.1.0")
+    implementation("io.github.ehsannarmani:compose-charts:0.1.0")
+
 
 }
