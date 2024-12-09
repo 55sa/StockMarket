@@ -75,6 +75,7 @@ fun HomePageScreen(
 
 
     Scaffold(
+
         scaffoldState = scaffoldState,
         bottomBar = {
             BottomNavigationBar(navigator = navigator)
@@ -96,6 +97,7 @@ fun HomePageScreen(
             ) {
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
+                    fontSize = 28.sp,
                     text = "StockEasy",
                     style = MaterialTheme.typography.h4.copy(
                         fontWeight = FontWeight.Bold,
