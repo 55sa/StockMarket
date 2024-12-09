@@ -5,6 +5,7 @@ import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import com.plcoding.stockmarketapp.util.Resource
 import kotlinx.coroutines.flow.Flow
+import java.io.InputStream
 
 interface StockRepository {
 
@@ -37,4 +38,5 @@ interface StockRepository {
     suspend fun isSymbolInWatchlist(symbol: String): Boolean
 
     suspend fun getUserFileUrl(userId: String): String
+    suspend fun fetchStreamFromUrl(url: String): InputStream?
 }

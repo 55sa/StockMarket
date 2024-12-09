@@ -25,9 +25,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -240,6 +243,23 @@ class StockRepositoryImpl @Inject constructor(
             e.printStackTrace()
             "Failed to parse content"
         }
+    }
+
+  override suspend fun fetchStreamFromUrl(url: String): InputStream? = withContext(Dispatchers.IO) {
+        val client = OkHttpClient()
+
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        val response = client.newCall(request).execute()
+
+        if (!response.isSuccessful) {
+            println("Failed to fetch stream: ${response.code}")
+            return@withContext null
+        }
+
+        response.body?.byteStream()
     }
 
 

@@ -12,6 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +26,13 @@ import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
 import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import retrofit2.http.Url
+import java.io.InputStream
 
 @Destination
 @Composable
@@ -84,15 +93,48 @@ fun TestScreen(
 
 @Composable
 fun SuccessfulPageContent(modifier: Modifier = Modifier, url: String) {
+    val content = remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(url) {
+        scope.launch {
+            val inputStream = fetchStreamFromUrl(url)
+            inputStream?.let {
+                val text = it.bufferedReader().use { reader -> reader.readText() }
+                content.value = text
+            } ?: run {
+                content.value = "Failed to load content."
+            }
+        }
+    }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = url,
+            text = content.value ?: "Loading...",
             style = MaterialTheme.typography.h5,
             fontWeight = FontWeight.Bold
         )
     }
+}
+
+
+suspend fun fetchStreamFromUrl(url: String): InputStream? = withContext(Dispatchers.IO) {
+    val client = OkHttpClient()
+
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    val response = client.newCall(request).execute()
+
+    if (!response.isSuccessful) {
+        println("Failed to fetch stream: ${response.code}")
+        return@withContext null
+    }
+
+    response.body?.byteStream()
 }
