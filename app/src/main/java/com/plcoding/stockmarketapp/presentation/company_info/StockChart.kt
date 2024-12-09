@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +40,9 @@ import ir.ehsannarmani.compose_charts.models.BarProperties
 import ir.ehsannarmani.compose_charts.models.Bars
 import ir.ehsannarmani.compose_charts.models.DrawStyle
 import ir.ehsannarmani.compose_charts.models.GridProperties
+import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
+import ir.ehsannarmani.compose_charts.models.IndicatorPosition
+import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.LabelProperties
 import ir.ehsannarmani.compose_charts.models.Line
 import ir.ehsannarmani.compose_charts.models.StrokeStyle
@@ -63,21 +67,27 @@ fun StockChart(
     val dateFormatter2 = DateTimeFormatter.ofPattern("HH:mm")
     val dateLabels2 = sortedInfos.map { it.date.format(dateFormatter2) }
 
-    // 根据主题决定文字颜色
+    // Define text color based on theme
     val textColor = if (isDarkTheme) {
-        Color.Green // DarkMode下数字为绿色
+        Color.Green // Dark theme
     } else {
-        Color.Black // LightMode下为黑色或可根据需要调整
+        Color.Black // Light theme
     }
 
-    // 根据涨跌情况决定线的颜色
+    // Define label text style
+    val labelTextStyle = TextStyle(
+        color = textColor,
+        fontSize = 14.sp
+    )
+
+    // Determine line color based on price movement
     val lineColor = if (closeValues.isNotEmpty() && closeValues.last() > closeValues.first()) {
-        Color.Green // 涨
+        Color.Green // Price increased
     } else {
-        Color.Red // 跌
+        Color.Red // Price decreased
     }
 
-    // 定义Y轴最大最小值
+    // Define Y-axis max and min
     val maxVal = (closeValues.maxOrNull() ?: 0.0) + 1
     val minVal = (closeValues.minOrNull() ?: 0.0) - 1
 
@@ -89,9 +99,9 @@ fun StockChart(
         lineCount = 5
     )
 
-    // 抽样减少X轴标签密度
+    // Reduce X-axis label density
     val totalLabels = dateLabels2.size
-    val desiredLabelCount = 6 // 期望的标签数，可根据需要调整
+    val desiredLabelCount = 6
     val step = (totalLabels / desiredLabelCount).coerceAtLeast(1)
     val reducedLabels = dateLabels2.filterIndexed { index, _ ->
         index % step == 0
@@ -120,15 +130,28 @@ fun StockChart(
         labelProperties = LabelProperties(
             enabled = true,
             labels = reducedLabels,
-            textStyle = androidx.compose.ui.text.TextStyle(
+            textStyle = TextStyle(
                 color = textColor,
                 fontSize = 12.sp
             )
+        ),
+        // Indicator properties for Y-axis labels
+        indicatorProperties = HorizontalIndicatorProperties(
+            enabled = true,
+            position = IndicatorPosition.Horizontal.Start, // Y-axis on the left
+            textStyle = TextStyle(
+                color = textColor,  // Y-axis text color
+                fontSize = 12.sp
+            ),
         ),
         gridProperties = GridProperties(
             enabled = true,
             xAxisProperties = axisProperties,
             yAxisProperties = axisProperties
+        ),
+        // Customize the LabelHelper to change label colors based on the theme
+        labelHelperProperties = LabelHelperProperties(
+            textStyle = labelTextStyle
         ),
         animationMode = AnimationMode.Together(delayBuilder = { it * 500L })
     )
