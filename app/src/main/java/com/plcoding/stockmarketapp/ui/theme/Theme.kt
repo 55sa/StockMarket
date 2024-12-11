@@ -7,11 +7,22 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+
 private val DarkColorPalette = darkColors(
     primary = Color.Green,
-    background = DarkBlue,
-    onPrimary = Color.DarkGray,
-    onBackground = TextWhite
+    background = Color.Black,
+    surface = Color.DarkGray,
+    onPrimary = Color.White,
+    onBackground = Color.White
+)
+
+
+private val LightColorPalette = lightColors(
+    primary = Color.Green,
+    background = Color.White,
+    surface = Color.LightGray,
+    onPrimary = Color.Black,
+    onBackground = Color.Black
 )
 
 @Composable
@@ -19,8 +30,14 @@ fun StockMarketAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val colors = if (darkTheme) {
+        DarkColorPalette
+    } else {
+        LightColorPalette
+    }
+
     MaterialTheme(
-        colors = DarkColorPalette,
+        colors = colors,
         typography = Typography,
         shapes = Shapes,
         content = content

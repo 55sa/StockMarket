@@ -53,6 +53,9 @@ class CompanyInfoViewModel @Inject constructor(
                         is Resource.Error -> {
                             state = state.copy(error = gptResult.message, isLoading = false)
                         }
+                        is Resource.Loading -> {
+                            state = state.copy(isLoading = gptResult.isLoading)
+                        }
                     }
                 }
                 is Resource.Error -> {

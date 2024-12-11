@@ -2,9 +2,12 @@ package com.plcoding.stockmarketapp.presentation.company_info
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.EaseInOutCubic
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,169 +29,149 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import ir.ehsannarmani.compose_charts.LineChart
+import ir.ehsannarmani.compose_charts.models.AnimationMode
+import ir.ehsannarmani.compose_charts.models.BarProperties
+import ir.ehsannarmani.compose_charts.models.Bars
+import ir.ehsannarmani.compose_charts.models.DrawStyle
+import ir.ehsannarmani.compose_charts.models.GridProperties
+import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
+import ir.ehsannarmani.compose_charts.models.IndicatorPosition
+import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
+import ir.ehsannarmani.compose_charts.models.LabelProperties
+import ir.ehsannarmani.compose_charts.models.Line
+import ir.ehsannarmani.compose_charts.models.StrokeStyle
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StockChart(
-    infos: List<IntradayInfo> = emptyList(),
+    infos: List<IntradayInfo>,
     modifier: Modifier = Modifier
 ) {
-    val graphColor = if (infos.isNotEmpty() && infos.last().close >= infos.first().close) {
-        Color.Green
+    val isDarkTheme = isSystemInDarkTheme()
+
+    val sortedInfos = infos.sortedBy { it.date }
+    val closeValues = sortedInfos.map { it.close }
+
+    val dateFormatter = DateTimeFormatter.ofPattern("MM/dd")
+    val currentDayLabel = sortedInfos.firstOrNull()?.date?.format(dateFormatter) ?: "Unknown Date"
+
+    val dateFormatter2 = DateTimeFormatter.ofPattern("HH:mm")
+    val dateLabels2 = sortedInfos.map { it.date.format(dateFormatter2) }
+
+    // Define text color based on theme
+    val textColor = if (isDarkTheme) {
+        Color.Green // Dark theme
     } else {
-        Color.Red
+        Color.Black // Light theme
     }
 
-    val upperBound = (infos.maxOfOrNull { it.close }?.roundToInt() ?: 0) + 1
-    val lowerBound = (infos.minOfOrNull { it.close }?.roundToInt() ?: 0) - 1
+    // Define label text style
+    val labelTextStyle = TextStyle(
+        color = if (isDarkTheme) Color.Green else Color.Black, // Dynamic color based on theme
+        fontSize = 14.sp,                                      // Increased font size
+        fontWeight = FontWeight.Medium,                        // Enhanced font weight
+        fontStyle = FontStyle.Italic,                          // Set font style to Italic
+        letterSpacing = 0.5.sp,                                // Increased letter spacing
+        lineHeight = 20.sp,                                    // Adjusted line height
+        fontFamily = FontFamily.SansSerif
 
-    var selectedInfo by remember { mutableStateOf<IntradayInfo?>(null) }
-    val dateFormatter = DateTimeFormatter.ofPattern("MM-dd HH:mm")
-    val density = LocalDensity.current
-    val textColor = MaterialTheme.colors.onBackground
+    )
 
-    Box(
+    // Determine line color based on price movement
+    val lineColor = if (closeValues.isNotEmpty() && closeValues.last() > closeValues.first()) {
+        Color.Green // Price increased
+    } else {
+        Color.Red // Price decreased
+    }
+
+    // Define Y-axis max and min
+    val maxVal = (closeValues.maxOrNull() ?: 0.0) + 1
+    val minVal = (closeValues.minOrNull() ?: 0.0) - 1
+
+    val axisProperties = GridProperties.AxisProperties(
+        enabled = true,
+        style = StrokeStyle.Dashed(intervals = floatArrayOf(10f, 10f)),
+        color = SolidColor(lineColor),
+        thickness = (0.5).dp,
+        lineCount = 5
+    )
+
+    // Reduce X-axis label density
+    val totalLabels = dateLabels2.size
+    val desiredLabelCount = 6
+    val step = (totalLabels / desiredLabelCount).coerceAtLeast(1)
+    val reducedLabels = dateLabels2.filterIndexed { index, _ ->
+        index % step == 0
+    }
+
+    LineChart(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp) // Prevent content from touching screen edges
-    ) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .height(300.dp) // Fixed height for the chart area
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        with(density) {
-                            val spacing = 20.dp.toPx()
-                            val canvasWidth = size.width
-                            val pointSpacing = (canvasWidth - spacing) / (infos.size - 1)
-
-                            val tappedIndex = ((offset.x - spacing) / pointSpacing).roundToInt()
-                                .coerceIn(0, infos.size - 1)
-
-                            val tappedPointX = spacing + tappedIndex * pointSpacing
-                            val tappedPointY = size.height - ((infos[tappedIndex].close - lowerBound) / (upperBound - lowerBound) * size.height)
-                            val touchThreshold = 20.dp.toPx()
-
-                            if (offset.x in (tappedPointX - touchThreshold)..(tappedPointX + touchThreshold) &&
-                                offset.y in (tappedPointY - touchThreshold)..(tappedPointY + touchThreshold)) {
-                                selectedInfo = infos.getOrNull(tappedIndex)
-                            } else {
-                                selectedInfo = null
-                            }
-                        }
-                    }
-                }
-        ) {
-            with(density) {
-                val spacing = 20.dp.toPx()
-                val canvasWidth = size.width
-                val canvasHeight = size.height
-                val pointSpacing = (canvasWidth - spacing) / (infos.size - 1)
-
-                // Draw horizontal grid lines and labels
-                val priceSteps = (upperBound - lowerBound) / 5
-                for (i in 0..4) {
-                    val y = canvasHeight - (canvasHeight / 4f) * i
-                    drawLine(
-                        color = Color.Gray,
-                        start = Offset(spacing, y),
-                        end = Offset(canvasWidth, y),
-                        strokeWidth = 1.dp.toPx()
-                    )
-                    drawContext.canvas.nativeCanvas.drawText(
-                        "${(lowerBound + priceSteps * i)}",
-                        spacing / 2,
-                        y,
-                        android.graphics.Paint().apply {
-                            color = textColor.toArgb()
-                            textSize = 12.sp.toPx()
-                            textAlign = android.graphics.Paint.Align.RIGHT
-                        }
-                    )
-                }
-
-                // Draw vertical grid lines and labels
-                infos.forEachIndexed { index, info ->
-                    val x = spacing + index * pointSpacing
-                    if (index % 5 == 0 || index == infos.size - 1) {
-                        val formattedDate = info.date.format(dateFormatter)
-                        drawLine(
-                            color = Color.Gray,
-                            start = Offset(x, 0f),
-                            end = Offset(x, canvasHeight),
-                            strokeWidth = 0.5.dp.toPx()
-                        )
-                        drawContext.canvas.nativeCanvas.drawText(
-                            formattedDate,
-                            x,
-                            canvasHeight + 15.dp.toPx(),
-                            android.graphics.Paint().apply {
-                                color = textColor.toArgb()
-                                textSize = 12.sp.toPx()
-                                textAlign = android.graphics.Paint.Align.CENTER
-                            }
-                        )
-                    }
-                }
-
-                // Create graph path
-                val graphPath = Path().apply {
-                    infos.forEachIndexed { index, info ->
-                        val x = spacing + index * pointSpacing
-                        val y = canvasHeight - ((info.close - lowerBound) / (upperBound - lowerBound) * canvasHeight)
-                        if (index == 0) moveTo(x, y.toFloat()) else lineTo(x, y.toFloat())
-                    }
-                }
-
-                // Draw graph path
-                drawPath(
-                    path = graphPath,
-                    color = graphColor,
-                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+            .padding(horizontal = 10.dp),
+        data = remember {
+            listOf(
+                Line(
+                    label = currentDayLabel,
+                    values = closeValues,
+                    color = SolidColor(lineColor),
+                    firstGradientFillColor = lineColor.copy(alpha = 0.5f),
+                    secondGradientFillColor = Color.Transparent,
+                    strokeAnimationSpec = tween(durationMillis = 2000, easing = EaseInOutCubic),
+                    gradientAnimationDelay = 1000,
+                    drawStyle = DrawStyle.Stroke(width = 2.dp)
                 )
-
-                // Draw points
-                infos.forEachIndexed { index, info ->
-                    val x = spacing + index * pointSpacing
-                    val y = canvasHeight - ((info.close - lowerBound) / (upperBound - lowerBound) * canvasHeight)
-                    drawCircle(
-                        color = graphColor,
-                        center = Offset(x, y.toFloat()),
-                        radius = 4.dp.toPx()
-                    )
-                }
-            }
-        }
-
-        // Tooltip at the bottom
-        selectedInfo?.let { info ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                Text(
-                    text = "Date: ${info.date.format(dateFormatter)}\nPrice: ${String.format("%.2f", info.close)}",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
+            )
+        },
+        maxValue = maxVal,
+        minValue = minVal,
+        labelProperties = LabelProperties(
+            enabled = true,
+            labels = reducedLabels,
+            textStyle = TextStyle(
+                color = textColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,                        // Enhanced font weight
+                fontStyle = FontStyle.Italic,                          // Set font style to Italic
+                letterSpacing = 0.5.sp,                                // Increased letter spacing
+                lineHeight = 20.sp,                                    // Adjusted line height
+                fontFamily = FontFamily.SansSerif
+            )
+        ),
+        // Indicator properties for Y-axis labels
+        indicatorProperties = HorizontalIndicatorProperties(
+            enabled = true,
+            position = IndicatorPosition.Horizontal.Start, // Y-axis on the left
+            textStyle = TextStyle(
+                color = textColor,  // Y-axis text color
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,                        // Enhanced font weight
+                fontStyle = FontStyle.Italic,                          // Set font style to Italic
+                letterSpacing = 0.5.sp,                                // Increased letter spacing
+                lineHeight = 20.sp,                                    // Adjusted line height
+                fontFamily = FontFamily.SansSerif
+            ),
+        ),
+        gridProperties = GridProperties(
+            enabled = true,
+            xAxisProperties = axisProperties,
+            yAxisProperties = axisProperties
+        ),
+        // Customize the LabelHelper to change label colors based on the theme
+        labelHelperProperties = LabelHelperProperties(
+            textStyle = labelTextStyle
+        ),
+        animationMode = AnimationMode.Together(delayBuilder = { it * 500L })
+    )
 }
-
-
-
-

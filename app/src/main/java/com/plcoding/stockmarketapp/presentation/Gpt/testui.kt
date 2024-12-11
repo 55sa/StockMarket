@@ -1,5 +1,3 @@
-package com.plcoding.stockmarketapp.presentation.Gpt
-
 //package com.plcoding.stockmarketapp.presentation.Gpt
 //
 //import androidx.compose.foundation.layout.*

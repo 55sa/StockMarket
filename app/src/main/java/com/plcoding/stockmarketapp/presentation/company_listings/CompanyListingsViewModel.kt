@@ -8,10 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,13 +26,16 @@ class CompanyListingsViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        getCompanyListings()
+        viewModelScope.launch {
+        getCompanyListings()}
     }
 
-    fun onEvent(event: CompanyListingsEvent) {
+     fun onEvent(event: CompanyListingsEvent) {
         when(event) {
             is CompanyListingsEvent.Refresh -> {
-                getCompanyListings(fetchFromRemote = true)
+                viewModelScope.launch {
+                    getCompanyListings(fetchFromRemote = true)
+                }
             }
             is CompanyListingsEvent.OnSearchQueryChange -> {
                 state = state.copy(searchQuery = event.query)
@@ -43,10 +48,10 @@ class CompanyListingsViewModel @Inject constructor(
         }
     }
 
-    private fun getCompanyListings(
+    private suspend fun getCompanyListings(
         query: String = state.searchQuery.lowercase(),
         fetchFromRemote: Boolean = false
-    ) {
+    ) = withContext(Dispatchers.IO){
         viewModelScope.launch {
             repository
                 .getCompanyListings(fetchFromRemote, query)
