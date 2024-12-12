@@ -1,11 +1,10 @@
+
 package com.plcoding.stockmarketapp.data.repository
 
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.firebase.database.FirebaseDatabase
-import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.csv.CSVParser
-import com.plcoding.stockmarketapp.data.csv.CompanyListingsParser
 import com.plcoding.stockmarketapp.data.local.StockDatabase
 import com.plcoding.stockmarketapp.data.local.WatchlistEntity
 import com.plcoding.stockmarketapp.data.mapper.toCompanyInfo
@@ -31,8 +30,6 @@ import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
 import java.io.InputStream
-import java.io.InputStreamReader
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,7 +40,7 @@ class StockRepositoryImpl @Inject constructor(
     private val db: StockDatabase,
     private val companyListingsParser: CSVParser<CompanyListing>,
     private val intradayInfoParser: CSVParser<IntradayInfo>,
-): StockRepository {
+) : StockRepository {
 
     private val database = FirebaseDatabase.getInstance().reference
     private val dao = db.stockdao
@@ -55,7 +52,6 @@ class StockRepositoryImpl @Inject constructor(
     ): Flow<Resource<List<CompanyListing>>> = flow {
         emit(Resource.Loading(true))
 
-        // Move database operation to Dispatchers.IO
         val localListings = withContext(Dispatchers.IO) {
             dao.searchCompanyListing(query)
         }
@@ -73,14 +69,13 @@ class StockRepositoryImpl @Inject constructor(
 
         val remoteListings = try {
             val response = api.getListings()
-            companyListingsParser.parse(response.byteStream())
+            response.body()?.byteStream()?.let { companyListingsParser.parse(it) }
+                ?: throw IOException("Response body is null")
         } catch (e: IOException) {
-            e.printStackTrace()
-            emit(Resource.Error("Couldn't load data"))
+            emit(Resource.Error("Couldn't load data: ${e.message}"))
             null
         } catch (e: HttpException) {
-            e.printStackTrace()
-            emit(Resource.Error("Couldn't load data"))
+            emit(Resource.Error("Couldn't load data: ${e.message}"))
             null
         }
 
@@ -92,9 +87,7 @@ class StockRepositoryImpl @Inject constructor(
                 )
             }
             emit(Resource.Success(
-                data = dao
-                    .searchCompanyListing("")
-                    .map { it.toCompanyListing() }
+                data = dao.searchCompanyListing("").map { it.toCompanyListing() }
             ))
             emit(Resource.Loading(false))
         }
@@ -102,111 +95,89 @@ class StockRepositoryImpl @Inject constructor(
 
 
     override suspend fun getIntradayInfo(symbol: String): Resource<List<IntradayInfo>> = withContext(Dispatchers.IO) {
-         try {
+        try {
             val response = api.getIntradayInfo(symbol)
-            val results = intradayInfoParser.parse(response.byteStream())
+            val results = response.body()?.byteStream()?.let { intradayInfoParser.parse(it) } ?: throw IOException("Response body is null")
             Resource.Success(results)
-        } catch(e: IOException) {
-            e.printStackTrace()
-            Resource.Error(
-                message = "Couldn't load intraday info"
-            )
-        } catch(e: HttpException) {
-            e.printStackTrace()
-            Resource.Error(
-                message = "Couldn't load intraday info"
-            )
+        } catch (e: IOException) {
+            Resource.Error("Couldn't load intraday info: ${e.message}")
+        } catch (e: HttpException) {
+            Resource.Error("Couldn't load intraday info: ${e.message}")
         }
     }
 
     override suspend fun getCompanyInfo(symbol: String): Resource<CompanyInfo> = withContext(Dispatchers.IO) {
-         try {
+        try {
             val result = api.getCompanyInfo(symbol)
-            Resource.Success(result.toCompanyInfo())
-        } catch(e: IOException) {
-            e.printStackTrace()
-            Resource.Error(
-                message = "Couldn't load company info"
-            )
-        } catch(e: HttpException) {
-            e.printStackTrace()
-            Resource.Error(
-                message = "Couldn't load company info"
-            )
+            result.body()?.let { Resource.Success(it.toCompanyInfo()) } ?: Resource.Error("Response body is null")
+        } catch (e: IOException) {
+            Resource.Error("Couldn't load company info: ${e.message}")
+        } catch (e: HttpException) {
+            Resource.Error("Couldn't load company info: ${e.message}")
         }
     }
 
     override suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>> = withContext(Dispatchers.IO) {
         try {
             val watchlistWithDetails = watchDao.getWatchlistWithDetails()
-            val mappedResult = watchlistWithDetails.map { it.toCompanyListing() }
-            Resource.Success(mappedResult)
+            Resource.Success(watchlistWithDetails.map { it.toCompanyListing() })
         } catch (e: Exception) {
-            e.printStackTrace()
-            Resource.Error("Failed to load watchlist details")
+            Resource.Error("Failed to load watchlist details: ${e.message}")
         }
     }
-
 
     override suspend fun isDatabaseInitialized(): Boolean = withContext(Dispatchers.IO) {
         dao.getCompanyListingCount() > 0
     }
 
-
     override suspend fun initializeDatabaseFromRemote(): Resource<Unit> = withContext(Dispatchers.IO) {
-         try {
+        try {
             val response = api.getListings()
-            val parsedListings = companyListingsParser.parse(response.byteStream())
+            val parsedListings = response.body()?.byteStream()?.let {
+                companyListingsParser.parse(it)
+            } ?: throw IOException("Response body is null")
 
-            // Save to database
             dao.clearCompanyListings()
             dao.insertCompanyListings(parsedListings.map { it.toCompanyListingEntity() })
 
             Resource.Success(Unit)
         } catch (e: Exception) {
-            e.printStackTrace()
             Resource.Error("Failed to initialize database: ${e.message}")
         }
     }
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String> = withContext(Dispatchers.IO) {
-         try {
-            // Build the GPT request
+        try {
             val tradesSummary = tradeInfoList.joinToString("\n") {
                 "Timestamp: ${it.date}, Close: ${it.close}"
             }
             val prompt = """
-            You are a financial analyst. Analyze the following intraday trading data and provide insights, such as patterns, anomalies, or trends in few sentences:
-            
-            $tradesSummary
-        """.trimIndent()
+                You are a financial analyst. Analyze the following intraday trading data and provide insights, such as patterns, anomalies, or trends in few sentences:
+
+                $tradesSummary
+            """.trimIndent()
 
             val gptRequest = GptRequest(
-                model = "gpt-3.5-turbo", // Ensure tshe model is included
+                model = "gpt-3.5-turbo",
                 messages = listOf(Message(role = "user", content = prompt)),
                 max_tokens = 200,
                 temperature = 0.7
             )
 
-            // Send request to GPT API
             val response = gptApi.analyzeIntradayInfo(gptRequest)
-
             val jsonResponse = response.string()
             val content = extractContentFromJson(jsonResponse)
 
-
-            Resource.Success(content) // Convert `ResponseBody` to string
+            Resource.Success(content)
         } catch (e: Exception) {
-            e.printStackTrace()
             Resource.Error("Failed to analyze with GPT: ${e.message}")
         }
     }
 
     override suspend fun addToWatchList(symbol: String) = withContext(Dispatchers.IO) {
-        watchDao.insertwatch(
-            WatchlistEntity(symbol = symbol)
-        )
+        watchDao.insertwatch(WatchlistEntity(symbol = symbol))
     }
 
     override suspend fun deleteFromWatchList(symbol: String): Unit = withContext(Dispatchers.IO) {
@@ -214,22 +185,20 @@ class StockRepositoryImpl @Inject constructor(
     }
 
     override suspend fun isSymbolInWatchlist(symbol: String): Boolean = withContext(Dispatchers.IO) {
-         watchDao.isSymbolInWatchlist(symbol)
+        watchDao.isSymbolInWatchlist(symbol)
     }
 
     override suspend fun getUserFileUrl(userId: String): String = withContext(Dispatchers.IO) {
-       try {
+        try {
             val snapshot = database.child(userId).get().await()
-            snapshot.getValue(String::class.java).toString()
+            snapshot.getValue(String::class.java).orEmpty()
         } catch (e: Exception) {
-            e.printStackTrace()
             "*"
         }
     }
 
-
     private suspend fun extractContentFromJson(jsonResponse: String): String = withContext(Dispatchers.IO) {
-       try {
+        try {
             val root = JSONObject(jsonResponse)
             val choices = root.getJSONArray("choices")
             if (choices.length() > 0) {
@@ -240,27 +209,15 @@ class StockRepositoryImpl @Inject constructor(
                 "No content found"
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             "Failed to parse content"
         }
     }
 
-  override suspend fun fetchStreamFromUrl(url: String): InputStream? = withContext(Dispatchers.IO) {
+    override suspend fun fetchStreamFromUrl(url: String): InputStream? = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
-
-        val request = Request.Builder()
-            .url(url)
-            .build()
+        val request = Request.Builder().url(url).build()
 
         val response = client.newCall(request).execute()
-
-        if (!response.isSuccessful) {
-            println("Failed to fetch stream: ${response.code}")
-            return@withContext null
-        }
-
-        response.body?.byteStream()
+        if (!response.isSuccessful) null else response.body?.byteStream()
     }
-
-
 }

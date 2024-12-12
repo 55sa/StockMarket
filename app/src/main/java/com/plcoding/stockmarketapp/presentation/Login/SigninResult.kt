@@ -1,4 +1,3 @@
-
 package com.plcoding.stockmarketapp.presentation.Login
 
 data class SignInResult(

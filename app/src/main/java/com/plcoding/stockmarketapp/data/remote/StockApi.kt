@@ -1,8 +1,9 @@
+
 package com.plcoding.stockmarketapp.data.remote
 
 import com.plcoding.stockmarketapp.data.remote.dto.CompanyInfoDto
-import okhttp3.Response
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -11,22 +12,34 @@ interface StockApi {
     @GET("query?function=LISTING_STATUS")
     suspend fun getListings(
         @Query("apikey") apiKey: String = API_KEY
-    ): ResponseBody
+    ): Response<ResponseBody>
 
     @GET("query?function=TIME_SERIES_INTRADAY&interval=60min&datatype=csv")
     suspend fun getIntradayInfo(
         @Query("symbol") symbol: String,
         @Query("apikey") apiKey: String = API_KEY
-    ): ResponseBody
+    ): Response<ResponseBody>
+
+    @GET("query?function=TIME_SERIES_WEEKLY&datatype=csv")
+    suspend fun getWeeklyInfo(
+        @Query("symbol") symbol: String,
+        @Query("apikey") apiKey: String = API_KEY
+    ): Response<ResponseBody>
+
+    @GET("query?function=TIME_SERIES_MONTHLY&datatype=csv")
+    suspend fun getMonthlyInfo(
+        @Query("symbol") symbol: String,
+        @Query("apikey") apiKey: String = API_KEY
+    ): Response<ResponseBody>
 
     @GET("query?function=OVERVIEW")
     suspend fun getCompanyInfo(
         @Query("symbol") symbol: String,
         @Query("apikey") apiKey: String = API_KEY
-    ): CompanyInfoDto
+    ): Response<CompanyInfoDto>
 
     companion object {
-            const val API_KEY = "ASTRKQDH8B8QVMQQ"
+        const val API_KEY = "ASTRKQDH8B8QVMQQ"
         const val BASE_URL = "https://alphavantage.co"
     }
 }
