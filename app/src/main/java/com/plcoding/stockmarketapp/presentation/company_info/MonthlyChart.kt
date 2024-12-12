@@ -125,7 +125,7 @@ fun MonthlyChart(
         data = remember {
             listOf(
                 Line(
-                    label = currentDayLabel,
+                    label = currentDayLabel+" - "+(currentDayLabel.toInt()+1),
                     values = closeValues,
                     color = SolidColor(lineColor),
                     firstGradientFillColor = lineColor.copy(alpha = 0.5f),

@@ -65,6 +65,30 @@ class CompanyInfoViewModel @Inject constructor(
                 }
                 else -> Unit
             }
+            // Fetch monthly info
+            when (val result = monthlyInfoDeferred.await()) {
+                is Resource.Success -> {
+                    state = state.copy(monthInfos = result.data ?: emptyList(), error = null)
+                }
+                is Resource.Error -> {
+                    state = state.copy(error = result.message, isLoading = false)
+                }
+                else -> Unit
+            }
+
+            // Fetch weekly info
+            when (val result = weeklyInfoDeferred.await()) {
+                is Resource.Success -> {
+                    state = state.copy(weekInfos = result.data ?: emptyList(), error = null, isLoading = false)
+                }
+                is Resource.Error -> {
+                    state = state.copy(error = result.message, isLoading = false)
+                }
+                else -> Unit
+            }
+
+
+
         }
     }
 
