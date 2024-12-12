@@ -6,6 +6,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.opencsv.CSVReader
 import com.plcoding.stockmarketapp.data.csv.CSVParser
 import com.plcoding.stockmarketapp.data.csv.CompanyListingsParser
+import com.plcoding.stockmarketapp.data.csv.MonthlyInfoParser
+import com.plcoding.stockmarketapp.data.csv.WeeklyInfoParser
 import com.plcoding.stockmarketapp.data.local.StockDatabase
 import com.plcoding.stockmarketapp.data.local.WatchlistEntity
 import com.plcoding.stockmarketapp.data.mapper.toCompanyInfo
@@ -18,6 +20,8 @@ import com.plcoding.stockmarketapp.data.remote.dto.Message
 import com.plcoding.stockmarketapp.domain.model.CompanyInfo
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import com.plcoding.stockmarketapp.domain.model.MonthlyInfo
+import com.plcoding.stockmarketapp.domain.model.WeeklyInfo
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.util.Resource
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +47,8 @@ class StockRepositoryImpl @Inject constructor(
     private val db: StockDatabase,
     private val companyListingsParser: CSVParser<CompanyListing>,
     private val intradayInfoParser: CSVParser<IntradayInfo>,
+    private val monthlyInfoParser: CSVParser<MonthlyInfo>,   // 新增
+    private val weeklyInfoParser: CSVParser<WeeklyInfo>
 ): StockRepository {
 
     private val database = FirebaseDatabase.getInstance().reference
@@ -117,6 +123,43 @@ class StockRepositoryImpl @Inject constructor(
                 message = "Couldn't load intraday info"
             )
         }
+    }
+
+    override suspend fun getMonthlyInfo(symbol: String): Resource<List<MonthlyInfo>> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.getMonthlyInfo(symbol)
+            val results = monthlyInfoParser.parse(response.byteStream())
+            Resource.Success(results)
+        } catch(e: IOException) {
+            e.printStackTrace()
+            Resource.Error(
+                message = "Couldn't load intraday info"
+            )
+        } catch(e: HttpException) {
+            e.printStackTrace()
+            Resource.Error(
+                message = "Couldn't load intraday info"
+            )
+        }
+    }
+
+    override suspend fun getWeeklyInfo(symbol: String): Resource<List<WeeklyInfo>> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.getWeeklyInfo(symbol)
+            val results = weeklyInfoParser.parse(response.byteStream())
+            Resource.Success(results)
+        } catch(e: IOException) {
+            e.printStackTrace()
+            Resource.Error(
+                message = "Couldn't load intraday info"
+            )
+        } catch(e: HttpException) {
+            e.printStackTrace()
+            Resource.Error(
+                message = "Couldn't load intraday info"
+            )
+        }
+
     }
 
     override suspend fun getCompanyInfo(symbol: String): Resource<CompanyInfo> = withContext(Dispatchers.IO) {

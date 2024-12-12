@@ -28,6 +28,8 @@ class CompanyInfoViewModel @Inject constructor(
 
             val companyInfoDeferred = async { repository.getCompanyInfo(symbol) }
             val intradayInfoDeferred = async { repository.getIntradayInfo(symbol) }
+            val monthlyInfoDeferred = async { repository.getMonthlyInfo(symbol) }
+            val weeklyInfoDeferred = async { repository.getWeeklyInfo(symbol) }
 
             // Fetch company info
             when (val result = companyInfoDeferred.await()) {

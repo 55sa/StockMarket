@@ -14,6 +14,8 @@ import com.plcoding.stockmarketapp.data.remote.StockApi
 import com.plcoding.stockmarketapp.data.repository.StockRepositoryImpl
 import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import com.plcoding.stockmarketapp.domain.model.MonthlyInfo
+import com.plcoding.stockmarketapp.domain.model.WeeklyInfo
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.Login.GoogleAuthUiClient
 import dagger.Module
@@ -90,9 +92,13 @@ object AppModule {
             gptApi: GptApi,
             db: StockDatabase,
             companyListingsParser: CSVParser<CompanyListing>,
-            intradayInfoParser: CSVParser<IntradayInfo>
+            intradayInfoParser: CSVParser<IntradayInfo>,
+            monthlyInfoParser: CSVParser<MonthlyInfo>,
+            weeklyInfoParser: CSVParser<WeeklyInfo>
+
         ): StockRepository {
-            return StockRepositoryImpl(api, gptApi, db, companyListingsParser, intradayInfoParser)
+            return StockRepositoryImpl(api, gptApi, db, companyListingsParser, intradayInfoParser,
+                monthlyInfoParser, weeklyInfoParser)
         }
     }
 

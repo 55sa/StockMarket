@@ -25,6 +25,19 @@ interface StockApi {
         @Query("apikey") apiKey: String = API_KEY
     ): CompanyInfoDto
 
+
+    @GET("query?function=TIME_SERIES_WEEKLY&datatype=csv")
+    suspend fun getWeeklyInfo(
+        @Query("symbol") symbol: String,
+        @Query("apikey") apiKey: String = API_KEY
+    ): ResponseBody
+
+    @GET("query?function=TIME_SERIES_MONTHLY&datatype=csv")
+    suspend fun getMonthlyInfo(
+        @Query("symbol") symbol: String,
+        @Query("apikey") apiKey: String = API_KEY
+    ): ResponseBody
+
     companion object {
             const val API_KEY = "ASTRKQDH8B8QVMQQ"
         const val BASE_URL = "https://alphavantage.co"
