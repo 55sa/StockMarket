@@ -5,7 +5,6 @@ import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -14,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.plcoding.stockmarketapp.presentation.destinations.HomePageScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
-import com.plcoding.stockmarketapp.presentation.destinations.TestScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.TradingAnalysisScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 

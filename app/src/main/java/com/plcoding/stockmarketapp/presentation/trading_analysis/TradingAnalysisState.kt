@@ -1,10 +1,12 @@
 package com.plcoding.stockmarketapp.presentation.trading_analysis
 
-import com.plcoding.stockmarketapp.domain.model.TradeSide
+import com.plcoding.stockmarketapp.domain.model.NasdaqCompanyScreener
 import com.plcoding.stockmarketapp.domain.model.TradingDataEntry
 
 data class TradingAnalysisState (
     var tradingData: List<TradingDataEntry>  = emptyList(),
+    var nasdaqCompanyData: List<NasdaqCompanyScreener> = emptyList(),
+
     val showDailyVolumeTrend: Boolean = true,
     val showTransactionAmountDistribution: Boolean = false,
     val showUserActivePeriods: Boolean = false,
@@ -14,10 +16,10 @@ data class TradingAnalysisState (
 
 
     // for charts
-    val dailyVolumeTrend: List<Pair<String, Double>> = emptyList(),
-    val transactionAmountDistribution: Map<TradeSide, Double> = emptyMap(),
-    val userActivePeriods: List<Pair<String, Double>> = emptyList(),
+    val dailyVolumeTrend: Map<String, Double> = emptyMap(),
+    val transactionAmountDistribution: Map<String, Double> = emptyMap(),
+    val userActivePeriods: Map<String, Double> = emptyMap(),
     val userCategoryPreferences: Map<String, Double> = emptyMap(),
     val monthlyTransactionAnalysis: Map<String, Double> = emptyMap(),
-    val profitLossDistribution: Map<TradeSide, Double> = emptyMap()
+    val profitLossDistribution: Map<String, Double> = emptyMap()
 )
