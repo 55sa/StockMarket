@@ -141,24 +141,7 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
             .fillMaxSize()
             .background(Color(0xFF121212))
     ) {
-        // 顶部显示APP名称
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF1E88E5)) // 蓝色背景
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "StockEasy",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            )
-        }
+
 
         LazyColumn(
             modifier = Modifier.fillMaxSize()

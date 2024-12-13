@@ -3,6 +3,8 @@ package com.plcoding.stockmarketapp.presentation.trading_analysis
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import java.time.format.DateTimeFormatter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +23,13 @@ import com.plcoding.stockmarketapp.domain.model.OrderState
 import com.plcoding.stockmarketapp.domain.model.OrderType
 import com.plcoding.stockmarketapp.domain.model.TradeSide
 import com.plcoding.stockmarketapp.domain.model.TradingDataEntry
+import com.plcoding.stockmarketapp.domain.repository.StockRepository
+import com.plcoding.stockmarketapp.presentation.Login.AuthRepository
+import com.plcoding.stockmarketapp.presentation.Login.AuthViewModel
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.InputStream
 
 private val DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
@@ -29,22 +38,64 @@ private val DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 class TradingAnalysisViewModel  @Inject constructor(
     private val tradingDataParser: TradingDataParser, // 通过 Hilt 注入解析器
     private val nasdaqScreenerParser: NasdaqScreenerParser,
+    @ApplicationContext private val context: Context,
+    private val repository: StockRepository,
+    private val authRepository: AuthRepository
 
-    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
 
     private val _state = MutableStateFlow(TradingAnalysisState())
     val state: StateFlow<TradingAnalysisState> = _state
 
+
+
+
+
     init {
-        // init data
-        loadTradingDataFromFile()
+        // 监听 AuthRepository 的状态变化
+        viewModelScope.launch {
+            authRepository.authState.collect { authState ->
+                if (authState.isLoggedIn && authState.userId != null) {
+                    loadTradingDataFromFile(authState.userId)
+                } else {
+                    // 用户未登录，清除交易数据
+                    _state.emit(TradingAnalysisState())
+                    Log.d("TradingAnalysisViewModel", "用户未登录，交易数据已清除。")
+                }
+            }
+        }
     }
 
-    private fun loadTradingDataFromFile() {
+
+
+    suspend fun fetchStreamFromUrl(url: String): InputStream? = withContext(Dispatchers.IO) {
+        val client = OkHttpClient()
+
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        val response = client.newCall(request).execute()
+
+        if (!response.isSuccessful) {
+            println("Failed to fetch stream: ${response.code}")
+            return@withContext null
+        }
+
+        response.body?.byteStream()
+    }
+
+    private fun loadTradingDataFromFile(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val inputStream = context.resources.openRawResource(R.raw.trading_data)
+                val url = repository.getUserFileUrl(userId)
+                val inputStream = fetchStreamFromUrl(url)
+                if (inputStream == null) {
+                    Log.e("TradingAnalysisViewModel", "无法从URL获取输入流。")
+                    return@launch
+                }
+
                 val parsedData = tradingDataParser.parse(inputStream)
                 _state.emit(_state.value.copy(tradingData = parsedData))
 
@@ -53,8 +104,9 @@ class TradingAnalysisViewModel  @Inject constructor(
                 _state.emit(_state.value.copy(nasdaqCompanyData = nasdaqStockData))
 
                 recalculateAllCharts()
+                Log.d("TradingAnalysisViewModel", "交易数据和纳斯达克数据加载完成。")
             } catch (e: Exception) {
-                Log.e("TradingAnalysis", "Error loading trading data", e)
+                Log.e("TradingAnalysisViewModel", "加载交易数据时出错", e)
             }
         }
     }

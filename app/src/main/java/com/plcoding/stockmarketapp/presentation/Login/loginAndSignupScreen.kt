@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.auth.api.identity.Identity
 import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
@@ -76,7 +77,7 @@ fun LoginAndSignUpScreen(
         ) {
             if (state.isLoggedIn) {
                 // 登录后导航到成功页面
-                SuccessfulPage(navigator, onLogOut = { viewModel.logout() })
+                SuccessfulPage(navigator, onLogOut = { viewModel.logout() }, name = state.username)
             } else {
                 // 显示“使用 Google 登录”按钮
                 GoogleSignInButton(
@@ -150,7 +151,8 @@ fun GoogleSignInButton(onClick: () -> Unit) {
 @Composable
 fun SuccessfulPage(
     navigator: DestinationsNavigator,
-    onLogOut: () -> Unit = {}
+    onLogOut: () -> Unit = {},
+    name: String
 ) {
     Column(
         modifier = Modifier
@@ -159,7 +161,7 @@ fun SuccessfulPage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 购买力卡片
-        BuyingPowerCard()
+        BuyingPowerCard(name)
 
         Spacer(modifier = Modifier.height(40.dp)) // 调整空白高度
 
@@ -193,7 +195,7 @@ fun SuccessfulPage(
 }
 
 @Composable
-fun BuyingPowerCard() {
+fun BuyingPowerCard(name: String) {
     Card(
         shape = RoundedCornerShape(12.dp),
         backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f), // 使用主题主色的浅色变体
@@ -218,7 +220,7 @@ fun BuyingPowerCard() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Rp1.000.000",
+                text = "18631.6 USDT",
                 style = MaterialTheme.typography.h4.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colors.onSurface
@@ -230,19 +232,13 @@ fun BuyingPowerCard() {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Saldo RDN\nRp1.200.050",
+                    text = name,
                     style = MaterialTheme.typography.body2.copy(
                         color = MaterialTheme.colors.onSurface
                     ),
                     textAlign = TextAlign.Start
                 )
-                Text(
-                    text = "Saldo Pending\nRp200.050",
-                    style = MaterialTheme.typography.body2.copy(
-                        color = MaterialTheme.colors.onSurface
-                    ),
-                    textAlign = TextAlign.End
-                )
+
             }
         }
     }

@@ -29,7 +29,7 @@ fun BottomNavigationBar(
     ) {
         BottomNavigationItem(
             icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Home") },
-            selected = false, // Adjust this as needed to highlight selected item
+            selected = false,
             onClick = { navigator.navigate(HomePageScreenDestination) }
         )
         BottomNavigationItem(
@@ -37,11 +37,7 @@ fun BottomNavigationBar(
             selected = false,
             onClick = {navigator.navigate(TradingAnalysisScreenDestination)}
         )
-        BottomNavigationItem(
-            icon = { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notifications") },
-            selected = false,
-            onClick = {}
-        )
+
         BottomNavigationItem(
             icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Profile") },
             selected = false,
