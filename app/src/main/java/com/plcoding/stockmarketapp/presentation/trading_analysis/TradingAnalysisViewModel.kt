@@ -36,6 +36,8 @@ class TradingAnalysisViewModel  @Inject constructor(
     private val _state = MutableStateFlow(TradingAnalysisState())
     val state: StateFlow<TradingAnalysisState> = _state
 
+    val referenceDate = java.time.LocalDate.of(2024, 11, 22) // Dummy Data TODO
+
     init {
         // init data
         loadTradingDataFromFile()
@@ -44,15 +46,29 @@ class TradingAnalysisViewModel  @Inject constructor(
     private fun loadTradingDataFromFile() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val inputStream = context.resources.openRawResource(R.raw.trading_data)
-                val parsedData = tradingDataParser.parse(inputStream)
-                _state.emit(_state.value.copy(tradingData = parsedData))
-
+                // Get more useful info about the companies
                 val inputStreamNasdaq = context.resources.openRawResource(R.raw.nasdaq_screener)
                 val nasdaqStockData = nasdaqScreenerParser.parse(inputStreamNasdaq)
                 _state.emit(_state.value.copy(nasdaqCompanyData = nasdaqStockData))
 
-                recalculateAllCharts()
+                // Parse TradingData
+                val inputStream = context.resources.openRawResource(R.raw.trading_data)
+                val parsedData = tradingDataParser.parse(inputStream)
+                _state.emit(_state.value.copy(tradingData = parsedData))
+
+                // Update Last Week's data first
+                // TODO: remove the referenceDate when deploying
+                val lastWeekData = filterLastWeekData(referenceDate)
+                val weekBeforeLastData = filterWeekBeforeLastData(referenceDate)
+                _state.emit(
+                    _state.value.copy(
+                        lastWeekData = lastWeekData,
+                        weekBeforeLastData = weekBeforeLastData
+                        )
+                )
+                Log.d("loadTradingDataFromFile", "lastWeekData: ${_state.value.lastWeekData}")
+
+                updateTradingAnalysisState()
             } catch (e: Exception) {
                 Log.e("TradingAnalysis", "Error loading trading data", e)
             }
@@ -62,11 +78,11 @@ class TradingAnalysisViewModel  @Inject constructor(
     fun loadTradingData(tradingData: List<TradingDataEntry>) {
         viewModelScope.launch {
             _state.emit(_state.value.copy(tradingData = tradingData))
-            recalculateAllCharts()
+            updateTradingAnalysisState()
         }
     }
 
-    private fun recalculateAllCharts() {
+    private fun updateTradingAnalysisState() {
         viewModelScope.launch {
             _state.emit(
                 _state.value.copy(
@@ -79,8 +95,10 @@ class TradingAnalysisViewModel  @Inject constructor(
                     profitLossDistribution = calculateProfitLossDistribution(),
 
                     // V 2.0
-                    totalTrades = calculateTotalTrades(),
-                    tradeGrowthPercentage = calculateTradeGrowth(),
+
+                    // Update the rest
+                    weeklyTotalTrades = calculateWeeklyTotalTrades(),
+                    weeklyTradeGrowthPercentage = calculateWeeklyTradeGrowth(),
                     totalTTrades = calculateTotalTTrades(),
                     successfulTradePercentage = calculateSuccessfulTradePercentage(),
                     totalStocksTraded = calculateTotalStocksTraded(),
@@ -93,9 +111,12 @@ class TradingAnalysisViewModel  @Inject constructor(
                     mostActiveSellTime = calculateMostActiveSellTime(),
                     mostActiveSellCount = calculateMostActiveSellCount()
 
+
+
                 )
             )
         }
+        Log.d("updateTradingAnalysisState", "lastWeekData: ${_state.value.lastWeekData}")
     }
 
 
@@ -182,30 +203,65 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     // V 2.0
 
+    private fun getWeekRange(referenceDate: java.time.LocalDate = java.time.LocalDate.now(), weeksAgo: Int = 1): Pair<java.time.LocalDate, java.time.LocalDate> {
+        // Helper function to get the dates for weeks
+        val startOfWeek = referenceDate.minusWeeks(weeksAgo.toLong()).with(java.time.DayOfWeek.MONDAY)
+        val endOfWeek = referenceDate.minusWeeks(weeksAgo.toLong()).with(java.time.DayOfWeek.SUNDAY)
+        Log.d("getWeekRange", "startOfWeek: $startOfWeek")
+        Log.d("getWeekRange", "endOfWeek: $endOfWeek")
+        return Pair(startOfWeek, endOfWeek)
+    }
+
+    private fun filterLastWeekData(referenceDate: java.time.LocalDate = java.time.LocalDate.now()): List<TradingDataEntry> {
+        // Helper function to get the data for that specific week
+        val (startOfLastWeek, endOfLastWeek) = getWeekRange(referenceDate, weeksAgo = 1)
+        val lastWeekData = _state.value.tradingData.filter {
+            val date = java.time.LocalDate.parse(it.createdAt.substring(0, 10))
+//            Log.d("filterLastWeekData", "date: ${it.createdAt.substring(0, 10)}")
+//            if (date in startOfLastWeek..endOfLastWeek){
+//                Log.d("filterLastWeekData", "in lastweek?: True")
+//            }
+            date in startOfLastWeek..endOfLastWeek
+        }
+        Log.d("filterLastWeekData", "date: ${lastWeekData}")
+        return lastWeekData
+    }
+
+    private fun filterWeekBeforeLastData(referenceDate: java.time.LocalDate = java.time.LocalDate.now()): List<TradingDataEntry> {
+        val (startOfWeekBeforeLast, endOfWeekBeforeLast) = getWeekRange(referenceDate, weeksAgo = 2)
+        return _state.value.tradingData.filter {
+            val date = java.time.LocalDate.parse(it.createdAt.substring(0, 10))
+            date in startOfWeekBeforeLast..endOfWeekBeforeLast
+        }
+    }
+
     // 总交易次数
-    private fun calculateTotalTrades(): Int {
-        return _state.value.tradingData.size
+    private fun calculateWeeklyTotalTrades(): Int {
+        Log.d("calculateWeeklyTotalTrades", "calculateWeeklyTotalTrades: ${_state.value.lastWeekData.size}")
+        return _state.value.lastWeekData.size
     }
 
     // 交易增长百分比
-    private fun calculateTradeGrowth(): Double {
-        val lastWeekData = getLastWeekData()
-        val currentTrades = _state.value.tradingData.size
-        val lastWeekTrades = lastWeekData.size
-        return if (lastWeekTrades > 0) {
-            ((currentTrades - lastWeekTrades).toDouble() / lastWeekTrades) * 100
+    @SuppressLint("DefaultLocale")
+    private fun calculateWeeklyTradeGrowth(): Double {
+        val currentTrades = _state.value.lastWeekData.size
+        val lastWeekTrades = _state.value.weekBeforeLastData.size
+        return if (lastWeekTrades != 0){
+            String.format("%.2f", ((currentTrades - lastWeekTrades).toDouble() / lastWeekTrades) * 100).toDouble()
         } else 0.0
+
     }
 
+    // TODO: 这里这两个算法不对，做T应该是当天对于同一只股票的买卖
     // 做 T 的交易次数
     private fun calculateTotalTTrades(): Int {
-        return _state.value.tradingData.count { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
+        return _state.value.lastWeekData.count { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
     }
 
     // 做 T 的成功率
     @SuppressLint("DefaultLocale")
     private fun calculateSuccessfulTradePercentage(): Double {
-        val tTrades = _state.value.tradingData.filter { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
+        val tTrades = _state.value.lastWeekData.filter { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
         val successfulTrades = tTrades.count { it.state == OrderState.CLOSED }
         return if (tTrades.isNotEmpty()) {
             String.format("%.2f", (successfulTrades.toDouble() / tTrades.size) * 100).toDouble()
@@ -214,7 +270,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     // 交易的股票总数
     private fun calculateTotalStocksTraded(): Int {
-        return _state.value.tradingData.map { it.symbol }.distinct().size
+        return _state.value.lastWeekData.map { it.symbol }.distinct().size
     }
 
     // 当前持仓的股票数量
@@ -276,17 +332,17 @@ class TradingAnalysisViewModel  @Inject constructor(
         return sellTimes[mostActiveTime] ?: 0
     }
 
-    // 获取上周交易数据
-    private fun getLastWeekData(): List<TradingDataEntry> {
-        return _state.value.tradingData.filter { it.createdAt.substring(0, 10) in getLastWeekRange() }
-    }
-
-    // 获取上周时间范围
-    private fun getLastWeekRange(): List<String> {
-        val now = java.time.LocalDate.now()
-        val lastWeekDates = (1..7).map { now.minusDays(it.toLong()).toString() }
-        return lastWeekDates
-    }
+//    // 获取上周交易数据
+//    private fun getLastWeekData(): List<TradingDataEntry> {
+//        return _state.value.tradingData.filter { it.createdAt.substring(0, 10) in getLastWeekRange() }
+//    }
+//
+//    // 获取上周时间范围
+//    private fun getLastWeekRange(): List<String> {
+//        val now = java.time.LocalDate.now()
+//        val lastWeekDates = (1..7).map { now.minusDays(it.toLong()).toString() }
+//        return lastWeekDates
+//    }
 
 
 }

@@ -109,19 +109,73 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
         )
 
     // V 2.0
+    val analysisGroup1 = listOf(
+        "Total Trades" to AnnotatedText(
+            text = "Last week, a total of ",
+            highlighted = "${state.weeklyTotalTrades}",
+            suffix = " trades were made. Compared to the previous week, there was a ",
+            highlighted2 = "${state.weeklyTradeGrowthPercentage}%",
+            suffix2 = " change."
+        ),
+        "T Trades" to AnnotatedText(
+            text = "A total of ",
+            highlighted = "${state.totalTTrades}",
+            suffix = " T trades were made with a success rate of ",
+            highlighted2 = "${state.successfulTradePercentage}%"
+        ),
+        "Stocks Summary" to AnnotatedText(
+            text = "Last week, ",
+            highlighted = "${state.totalStocksTraded}",
+            suffix = " stocks were traded, currently holding ",
+            highlighted2 = "${state.stocksCurrentlyHeld}",
+            suffix2 = " stocks, and cleared ",
+            highlighted3 = "${state.stocksCleared}"
+        ),
+        "Most Traded Stock" to AnnotatedText(
+            text = "The most traded stock was: ",
+            highlighted = state.mostTradedStock
+        ),
+        "Active Sector" to AnnotatedText(
+            text = "The most active sector was: ",
+            highlighted = state.mostActiveSector
+        ),
+        "Buying Time" to AnnotatedText(
+            text = "The most active buying time was: ",
+            highlighted = state.mostActiveBuyTime,
+            suffix = ", with ",
+            highlighted2 = "${state.mostActiveBuyCount} trades"
+        ),
+        "Selling Time" to AnnotatedText(
+            text = "The most active selling time was: ",
+            highlighted = state.mostActiveSellTime,
+            suffix = ", with ",
+            highlighted2 = "${state.mostActiveSellCount} trades"
+        )
+    )
+
     val cardsGroup1 = listOf(
         "Daily Volume Trend" to ChartType.Line(
             state.dailyVolumeTrend
+        ),
+        "User Active Periods" to ChartType.Row(
+            state.userActivePeriods
         ),
         "Transaction Amount Distribution" to ChartType.Column(
             state.transactionAmountDistribution
         )
     )
 
+    val analysisGroup2 = listOf(
+        "Selling Time" to AnnotatedText(
+            text = "The most active selling time was: ",
+            highlighted = state.mostActiveSellTime,
+            suffix = ", with ",
+            highlighted2 = "${state.mostActiveSellCount} trades"
+        )
+    )
+
     val cardsGroup2 = listOf(
-        "User Active Periods" to ChartType.Row(
-            state.userActivePeriods
-        ),
+
 
         "User Category Preferences" to ChartType.Column(
             state.userCategoryPreferences
@@ -167,32 +221,7 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 // 上半部分卡片组及分析
                 AnalysisAndCardGroup(
                     title = "Volume & Transaction Analysis",
-                    analysisContent = listOf(
-                        "Total Trades" to AnnotatedText(
-                            text = "Last week, a total of ",
-                            highlighted = "${state.totalTrades}",
-                            suffix = " trades were made."
-                        ),
-                        "Trade Growth" to AnnotatedText(
-                            text = "Compared to the previous week, there was a ",
-                            highlighted = "${state.tradeGrowthPercentage}%",
-                            suffix = " change."
-                        ),
-                        "T Trades" to AnnotatedText(
-                            text = "A total of ",
-                            highlighted = "${state.totalTTrades}",
-                            suffix = " T trades were made with a success rate of ",
-                            highlighted2 = "${state.successfulTradePercentage}%"
-                        ),
-                        "Stocks Summary" to AnnotatedText(
-                            text = "Last week, ",
-                            highlighted = "${state.totalStocksTraded}",
-                            suffix = " stocks were traded, currently holding ",
-                            highlighted2 = "${state.stocksCurrentlyHeld}",
-                            suffix2 = " stocks, and cleared ",
-                            highlighted3 = "${state.stocksCleared}"
-                        )
-                    ),
+                    analysisContent = analysisGroup1,
                     cards = cardsGroup1
                 )
 
@@ -204,32 +233,16 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 // 下半部分卡片组及分析
                 AnalysisAndCardGroup(
                     title = "User Behavior & Profit Analysis",
-                    analysisContent = listOf(
-                        "Most Traded Stock" to AnnotatedText(
-                            text = "The most traded stock was: ",
-                            highlighted = state.mostTradedStock
-                        ),
-                        "Active Sector" to AnnotatedText(
-                            text = "The most active sector was: ",
-                            highlighted = state.mostActiveSector
-                        ),
-                        "Buying Time" to AnnotatedText(
-                            text = "The most active buying time was: ",
-                            highlighted = state.mostActiveBuyTime,
-                            suffix = ", with ",
-                            highlighted2 = "${state.mostActiveBuyCount} trades"
-                        ),
-                        "Selling Time" to AnnotatedText(
-                            text = "The most active selling time was: ",
-                            highlighted = state.mostActiveSellTime,
-                            suffix = ", with ",
-                            highlighted2 = "${state.mostActiveSellCount} trades"
-                        )
-                    ),
+                    analysisContent = analysisGroup2,
                     cards = cardsGroup2
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // add additional space to avoid overlay
+            item {
+                Spacer(modifier = Modifier.height(56.dp)) // 56dp 是典型导航栏高度，可以调整为您的实际高度
             }
         }
 
@@ -246,75 +259,28 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
             .shadow(8.dp, RoundedCornerShape(16.dp))
             .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
     ) {
-        // 标题
-        Text(
-            text = title,
-            style = TextStyle(
-                color = Color(0xFF1E88E5),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(16.dp)
-        )
 
-        // 分析语句
-//        analysisContent.forEach { (header, content) ->
-//            Column(
-//                modifier = Modifier.padding(vertical = 8.dp)
-//            ) {
-//                Text(
-//                    text = header,
-//                    style = TextStyle(
-//                        color = Color.White,
-//                        fontSize = 18.sp,
-//                        fontWeight = FontWeight.Bold
-//                    ),
-//                    modifier = Modifier.padding(bottom = 4.dp)
-//                )
-//                Column(
-//                    modifier = Modifier.fillMaxWidth()
-//                ) {
-//                    Text(
-//                        text = content.text,
-//                        style = TextStyle(
-//                            color = Color.White.copy(alpha = 0.7f),
-//                            fontSize = 16.sp
-//                        ),
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//                    Text(
-//                        text = content.highlighted,
-//                        style = TextStyle(
-//                            color = Color(0xFF1E88E5),
-//                            fontSize = 16.sp,
-//                            fontWeight = FontWeight.Bold
-//                        ),
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//                    content.suffix?.let {
-//                        Text(
-//                            text = it,
-//                            style = TextStyle(
-//                                color = Color.White.copy(alpha = 0.7f),
-//                                fontSize = 16.sp
-//                            ),
-//                            modifier = Modifier.fillMaxWidth()
-//                        )
-//                    }
-//                    content.highlighted2?.let {
-//                        Text(
-//                            text = it,
-//                            style = TextStyle(
-//                                color = if (it.contains("%") && it.startsWith("-")) Color.Red else Color.Green,
-//                                fontSize = 16.sp,
-//                                fontWeight = FontWeight.Bold
-//                            ),
-//                            modifier = Modifier.fillMaxWidth()
-//                        )
-//                    }
-//                }
-//            }
-//        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center // set to center
+        ) {
+            Text(
+                text = title,
+                style = TextStyle(
+                    color = Color(0xFF1E88E5),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        }
+
+        // 卡片组件
+        SwipableCardComponent(cards = cards)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         analysisContent.forEach { (header, content) ->
             Column(
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -326,10 +292,10 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 4.dp).padding(horizontal = 6.dp)
                 )
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(horizontal = 6.dp).fillMaxWidth()
                 ) {
                     val annotatedText = buildAnnotatedString {
                         append(content.text)
@@ -360,11 +326,6 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 卡片组件
-        SwipableCardComponent(cards = cards)
     }
 }
 

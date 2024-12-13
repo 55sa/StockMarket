@@ -7,6 +7,7 @@ data class TradingAnalysisState (
     var tradingData: List<TradingDataEntry>  = emptyList(),
     var nasdaqCompanyData: List<NasdaqCompanyScreener> = emptyList(),
 
+
     val showDailyVolumeTrend: Boolean = true,
     val showTransactionAmountDistribution: Boolean = false,
     val showUserActivePeriods: Boolean = false,
@@ -15,7 +16,7 @@ data class TradingAnalysisState (
     val showProfitLossDistribution: Boolean = false,
 
 
-    // for charts
+    // for charts V 1.0
     val dailyVolumeTrend: Map<String, Double> = emptyMap(),
     val transactionAmountDistribution: Map<String, Double> = emptyMap(),
     val userActivePeriods: Map<String, Double> = emptyMap(),
@@ -24,8 +25,15 @@ data class TradingAnalysisState (
     val profitLossDistribution: Map<String, Double> = emptyMap(),
 
 
-    val totalTrades: Int = 0,
-    val tradeGrowthPercentage: Double = 0.0,
+    // V 2.0
+
+    // for Weekly Analysis
+    var lastWeekData: List<TradingDataEntry> = emptyList(),
+    var weekBeforeLastData: List<TradingDataEntry> = emptyList(),
+
+    // for Weekly User Behavior Analysis
+    val weeklyTotalTrades: Int = 0,
+    val weeklyTradeGrowthPercentage: Double = 0.0,
     val totalTTrades: Int = 0,
     val successfulTradePercentage: Double = 0.0,
     val totalStocksTraded: Int = 0,
@@ -37,4 +45,8 @@ data class TradingAnalysisState (
     val mostActiveBuyCount: Int = 0,
     val mostActiveSellTime: String = "",
     val mostActiveSellCount: Int = 0
+
+    // for Profit Analysis
+
+
 )
