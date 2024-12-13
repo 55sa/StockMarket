@@ -49,8 +49,10 @@ import androidx.compose.material3.Text
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.text.Spanned
+import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
 
 sealed class ChartType {
@@ -139,7 +141,7 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF121212))
+            .background(MaterialTheme.colors.background)
     ) {
 
 
@@ -227,15 +229,16 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
             .fillMaxWidth()
             .padding(16.dp)
             .shadow(8.dp, RoundedCornerShape(16.dp))
-            .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colors.surface, shape = RoundedCornerShape(16.dp))
     ) {
         // 标题
         Text(
             text = title,
             style = TextStyle(
-                color = Color(0xFF1E88E5),
+                color = MaterialTheme.colors.primary,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic // 设置斜体
             ),
             modifier = Modifier.padding(16.dp)
         )
@@ -305,9 +308,10 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                 Text(
                     text = header,
                     style = TextStyle(
-                        color = Color.White,
+                        color = MaterialTheme.colors.onSurface,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontStyle = FontStyle.Italic // 设置斜体
                     ),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -316,7 +320,7 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                 ) {
                     val annotatedText = buildAnnotatedString {
                         append(content.text)
-                        withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                        withStyle(style = SpanStyle(color = MaterialTheme.colors.primary)) {
                             append(content.highlighted)
                         }
                         content.suffix?.let { append(it) }
@@ -327,7 +331,7 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                         }
                         content.suffix2?.let { append(it) }
                         content.highlighted3?.let {
-                            withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                            withStyle(style = SpanStyle(color = MaterialTheme.colors.primary)) {
                                 append(it)
                             }
                         }
@@ -335,8 +339,9 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                     Text(
                         text = annotatedText,
                         style = TextStyle(
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 16.sp
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                            fontSize = 16.sp,
+                            fontStyle = FontStyle.Italic // 设置斜体
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -361,7 +366,7 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colors.background)
             .padding(16.dp)
     ) {
         Card(
