@@ -1,5 +1,6 @@
 package com.plcoding.stockmarketapp.presentation.trading_analysis
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import java.time.format.DateTimeFormatter
@@ -16,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.data.csv.NasdaqScreenerParser
 import com.plcoding.stockmarketapp.data.csv.TradingDataParser
+import com.plcoding.stockmarketapp.domain.model.OrderState
+import com.plcoding.stockmarketapp.domain.model.OrderType
 import com.plcoding.stockmarketapp.domain.model.TradeSide
 import com.plcoding.stockmarketapp.domain.model.TradingDataEntry
 
@@ -67,26 +70,34 @@ class TradingAnalysisViewModel  @Inject constructor(
         viewModelScope.launch {
             _state.emit(
                 _state.value.copy(
+                    // V 1.0
                     dailyVolumeTrend = calculateDailyVolumeTrend(),
                     transactionAmountDistribution = calculateTransactionAmountDistribution(),
                     userActivePeriods = calculateUserActivePeriods(),
                     userCategoryPreferences = calculateUserCategoryPreferences(),
                     monthlyTransactionAnalysis = calculateMonthlyTransactionAnalysis(),
-                    profitLossDistribution = calculateProfitLossDistribution()
+                    profitLossDistribution = calculateProfitLossDistribution(),
 
-                    //
+                    // V 2.0
+                    totalTrades = calculateTotalTrades(),
+                    tradeGrowthPercentage = calculateTradeGrowth(),
+                    totalTTrades = calculateTotalTTrades(),
+                    successfulTradePercentage = calculateSuccessfulTradePercentage(),
+                    totalStocksTraded = calculateTotalStocksTraded(),
+                    stocksCurrentlyHeld = calculateStocksCurrentlyHeld(),
+                    stocksCleared = calculateStocksCleared(),
+                    mostTradedStock = calculateMostTradedStock(),
+                    mostActiveSector = calculateMostActiveSector(),
+                    mostActiveBuyTime = calculateMostActiveBuyTime(),
+                    mostActiveBuyCount = calculateMostActiveBuyCount(),
+                    mostActiveSellTime = calculateMostActiveSellTime(),
+                    mostActiveSellCount = calculateMostActiveSellCount()
+
                 )
             )
         }
     }
 
-
-    // Toggle chart visibility
-    fun toggleChart(chart: (TradingAnalysisState) -> TradingAnalysisState) {
-        viewModelScope.launch {
-            _state.value = chart(_state.value)
-        }
-    }
 
     // Add methods for processing tradingData and returning chart data
     private fun calculateDailyVolumeTrend(): Map<String, Double> {
@@ -169,51 +180,113 @@ class TradingAnalysisViewModel  @Inject constructor(
             }
     }
 
-//    private fun calculateWeeklySummary(tradingData: List<TradingDataEntry>): Map<String, Any> {
-//        // 1. 获取当前时间和一周前的时间
-//        val now = LocalDateTime.now()
-//        val oneWeekAgo = now.minusWeeks(1)
-//
-//        // 2. 筛选出上一周的交易记录
-//        val lastWeekTrades = tradingData.filter {
-//            val tradeTime = LocalDateTime.parse(it.createdAt, DATE_FORMATTER)
-//            tradeTime.isAfter(oneWeekAgo) && tradeTime.isBefore(now)
-//        }
-//
-//        // 3. 初始化结果变量
-//        var netProfitLoss = 0.0
-//        val stockTradeCount = mutableMapOf<String, Int>()
-//        val tradeResults = mutableListOf<Map<String, Float>>()
-//
-//        // 4. 遍历每条交易记录
-//        for (trade in lastWeekTrades) {
-//            // 4.1 计算当前交易的盈亏
-//            val executionDetails = parseJsonString(trade.executions) // 假设这个是一个解析JSON的方法
-//            val effectivePrice = executionDetails["effective_price"]?.toDouble() ?: 0.0
-//            val quantity = executionDetails["quantity"]?.toDouble() ?: 0.0
-//            val profitLoss = if (trade.side == TradeSide.BUY) {
-//                -effectivePrice * quantity // 买入为负值
-//            } else {
-//                effectivePrice * quantity // 卖出为正值
-//            }
-//            netProfitLoss += profitLoss
-//
-//            // 4.2 统计每只股票的操作次数
-//            stockTradeCount[trade.symbol] = stockTradeCount.getOrDefault(trade.symbol, 0) + 1
-//
-//            // 4.3 记录每次操作的结果
-//            if (trade.filledAssetQuantity == 0.0 && trade.side == TradeSide.SELL) { // 假设 filledAssetQuantity = 0 表示清仓
-//                tradeResults[trade.symbol] = (tradeResults[trade.symbol] ?: 0f) + profitLoss.toFloat()
-//            }
-//        }
-//
-//        // 5. 返回汇总结果
-//        return mapOf(
-//            "netProfitLoss" to netProfitLoss,
-//            "stockTradeCount" to stockTradeCount,
-//            "tradeResults" to tradeResults
-//        )
-//    }
+    // V 2.0
+
+    // 总交易次数
+    private fun calculateTotalTrades(): Int {
+        return _state.value.tradingData.size
+    }
+
+    // 交易增长百分比
+    private fun calculateTradeGrowth(): Double {
+        val lastWeekData = getLastWeekData()
+        val currentTrades = _state.value.tradingData.size
+        val lastWeekTrades = lastWeekData.size
+        return if (lastWeekTrades > 0) {
+            ((currentTrades - lastWeekTrades).toDouble() / lastWeekTrades) * 100
+        } else 0.0
+    }
+
+    // 做 T 的交易次数
+    private fun calculateTotalTTrades(): Int {
+        return _state.value.tradingData.count { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
+    }
+
+    // 做 T 的成功率
+    @SuppressLint("DefaultLocale")
+    private fun calculateSuccessfulTradePercentage(): Double {
+        val tTrades = _state.value.tradingData.filter { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
+        val successfulTrades = tTrades.count { it.state == OrderState.CLOSED }
+        return if (tTrades.isNotEmpty()) {
+            String.format("%.2f", (successfulTrades.toDouble() / tTrades.size) * 100).toDouble()
+        } else 0.0
+    }
+
+    // 交易的股票总数
+    private fun calculateTotalStocksTraded(): Int {
+        return _state.value.tradingData.map { it.symbol }.distinct().size
+    }
+
+    // 当前持仓的股票数量
+    private fun calculateStocksCurrentlyHeld(): Int {
+        return _state.value.tradingData.filter { it.state != OrderState.CLOSED }.map { it.symbol }.distinct().size
+    }
+
+    // 已清仓的股票数量
+    private fun calculateStocksCleared(): Int {
+        val totalStocks = _state.value.tradingData.map { it.symbol }.distinct().size
+        val heldStocks = _state.value.tradingData.filter { it.state != OrderState.CLOSED }.map { it.symbol }.distinct().size
+        return totalStocks - heldStocks
+    }
+
+    // 交易次数最多的股票
+    private fun calculateMostTradedStock(): String {
+        return _state.value.tradingData.groupingBy { it.symbol }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
+    }
+
+    // 最活跃的行业
+    private fun calculateMostActiveSector(): String {
+        val nasdaqIndustryMap = _state.value.nasdaqCompanyData.associateBy { it.symbol }
+        return _state.value.tradingData.mapNotNull { entry ->
+            nasdaqIndustryMap[entry.symbol]?.industry
+        }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
+    }
+
+    // 最活跃的买入时间段
+    private fun calculateMostActiveBuyTime(): String {
+        return _state.value.tradingData.filter { it.side == TradeSide.BUY }
+            .groupBy { it.createdAt.substring(11, 13) } // 按小时分组
+            .maxByOrNull { (_, entries) -> entries.size }
+            ?.key?.let { "$it:00-$it:59" }.orEmpty()
+    }
+
+    // 最活跃的买入交易数量
+    private fun calculateMostActiveBuyCount(): Int {
+        val buyTimes = _state.value.tradingData.filter { it.side == TradeSide.BUY }
+            .groupingBy { it.createdAt.substring(11, 13) } // 按小时分组
+            .eachCount()
+        val mostActiveTime = buyTimes.maxByOrNull { it.value }?.key
+        return buyTimes[mostActiveTime] ?: 0
+    }
+
+    // 最活跃的卖出时间段
+    private fun calculateMostActiveSellTime(): String {
+        return _state.value.tradingData.filter { it.side == TradeSide.SELL }
+            .groupBy { it.createdAt.substring(11, 13) } // 按小时分组
+            .maxByOrNull { (_, entries) -> entries.size }
+            ?.key?.let { "$it:00-$it:59" }.orEmpty()
+    }
+
+    // 最活跃的卖出交易数量
+    private fun calculateMostActiveSellCount(): Int {
+        val sellTimes = _state.value.tradingData.filter { it.side == TradeSide.SELL }
+            .groupingBy { it.createdAt.substring(11, 13) } // 按小时分组
+            .eachCount()
+        val mostActiveTime = sellTimes.maxByOrNull { it.value }?.key
+        return sellTimes[mostActiveTime] ?: 0
+    }
+
+    // 获取上周交易数据
+    private fun getLastWeekData(): List<TradingDataEntry> {
+        return _state.value.tradingData.filter { it.createdAt.substring(0, 10) in getLastWeekRange() }
+    }
+
+    // 获取上周时间范围
+    private fun getLastWeekRange(): List<String> {
+        val now = java.time.LocalDate.now()
+        val lastWeekDates = (1..7).map { now.minusDays(it.toLong()).toString() }
+        return lastWeekDates
+    }
 
 
 }

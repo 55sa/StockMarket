@@ -30,7 +30,6 @@ import kotlin.math.log
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,9 +44,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.Spanned
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 
 sealed class ChartType {
     data class Line(val data: Map<String, Double>) : ChartType()
@@ -64,12 +68,22 @@ sealed class ChartType {
     }
 }
 
+data class AnnotatedText(
+    val text: String,
+    val highlighted: String,
+    val suffix: String? = null,
+    val highlighted2: String? = null,
+    val suffix2: String? = null,
+    val highlighted3: String? = null
+)
+
 
 @Composable
 fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
     val state = viewModel.state.collectAsState().value
 
+    // V 1.0
     val cardsToDraw = listOf(
             "Daily Volume Trend" to ChartType.Line(
                 state.dailyVolumeTrend
@@ -94,6 +108,34 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
             )
         )
 
+    // V 2.0
+    val cardsGroup1 = listOf(
+        "Daily Volume Trend" to ChartType.Line(
+            state.dailyVolumeTrend
+        ),
+        "Transaction Amount Distribution" to ChartType.Column(
+            state.transactionAmountDistribution
+        )
+    )
+
+    val cardsGroup2 = listOf(
+        "User Active Periods" to ChartType.Row(
+            state.userActivePeriods
+        ),
+
+        "User Category Preferences" to ChartType.Column(
+            state.userCategoryPreferences
+        ),
+
+        "Monthly Transaction Analysis" to ChartType.Column(
+            state.monthlyTransactionAnalysis
+        ),
+
+        "Profit Loss Distribution" to ChartType.Column(
+            state.profitLossDistribution
+        )
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -117,7 +159,6 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 )
             )
         }
-//        Spacer(modifier = Modifier.height(10.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize()
@@ -126,8 +167,33 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 // 上半部分卡片组及分析
                 AnalysisAndCardGroup(
                     title = "Volume & Transaction Analysis",
-                    analysisText = "Analysis of daily volumes and transaction distributions.",
-                    cards = cardsToDraw
+                    analysisContent = listOf(
+                        "Total Trades" to AnnotatedText(
+                            text = "Last week, a total of ",
+                            highlighted = "${state.totalTrades}",
+                            suffix = " trades were made."
+                        ),
+                        "Trade Growth" to AnnotatedText(
+                            text = "Compared to the previous week, there was a ",
+                            highlighted = "${state.tradeGrowthPercentage}%",
+                            suffix = " change."
+                        ),
+                        "T Trades" to AnnotatedText(
+                            text = "A total of ",
+                            highlighted = "${state.totalTTrades}",
+                            suffix = " T trades were made with a success rate of ",
+                            highlighted2 = "${state.successfulTradePercentage}%"
+                        ),
+                        "Stocks Summary" to AnnotatedText(
+                            text = "Last week, ",
+                            highlighted = "${state.totalStocksTraded}",
+                            suffix = " stocks were traded, currently holding ",
+                            highlighted2 = "${state.stocksCurrentlyHeld}",
+                            suffix2 = " stocks, and cleared ",
+                            highlighted3 = "${state.stocksCleared}"
+                        )
+                    ),
+                    cards = cardsGroup1
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -138,23 +204,41 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 // 下半部分卡片组及分析
                 AnalysisAndCardGroup(
                     title = "User Behavior & Profit Analysis",
-                    analysisText = "Insights on user activity and profit/loss distribution.",
-                    cards = cardsToDraw
+                    analysisContent = listOf(
+                        "Most Traded Stock" to AnnotatedText(
+                            text = "The most traded stock was: ",
+                            highlighted = state.mostTradedStock
+                        ),
+                        "Active Sector" to AnnotatedText(
+                            text = "The most active sector was: ",
+                            highlighted = state.mostActiveSector
+                        ),
+                        "Buying Time" to AnnotatedText(
+                            text = "The most active buying time was: ",
+                            highlighted = state.mostActiveBuyTime,
+                            suffix = ", with ",
+                            highlighted2 = "${state.mostActiveBuyCount} trades"
+                        ),
+                        "Selling Time" to AnnotatedText(
+                            text = "The most active selling time was: ",
+                            highlighted = state.mostActiveSellTime,
+                            suffix = ", with ",
+                            highlighted2 = "${state.mostActiveSellCount} trades"
+                        )
+                    ),
+                    cards = cardsGroup2
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(60.dp))
-
-
     }
 }
 
 
 @Composable
-fun AnalysisAndCardGroup(title: String, analysisText: String, cards: List<Pair<String, ChartType>>) {
+fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, AnnotatedText>>, cards: List<Pair<String, ChartType>>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -174,14 +258,108 @@ fun AnalysisAndCardGroup(title: String, analysisText: String, cards: List<Pair<S
         )
 
         // 分析语句
-        Text(
-            text = analysisText,
-            style = TextStyle(
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 16.sp
-            ),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+//        analysisContent.forEach { (header, content) ->
+//            Column(
+//                modifier = Modifier.padding(vertical = 8.dp)
+//            ) {
+//                Text(
+//                    text = header,
+//                    style = TextStyle(
+//                        color = Color.White,
+//                        fontSize = 18.sp,
+//                        fontWeight = FontWeight.Bold
+//                    ),
+//                    modifier = Modifier.padding(bottom = 4.dp)
+//                )
+//                Column(
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    Text(
+//                        text = content.text,
+//                        style = TextStyle(
+//                            color = Color.White.copy(alpha = 0.7f),
+//                            fontSize = 16.sp
+//                        ),
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                    Text(
+//                        text = content.highlighted,
+//                        style = TextStyle(
+//                            color = Color(0xFF1E88E5),
+//                            fontSize = 16.sp,
+//                            fontWeight = FontWeight.Bold
+//                        ),
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+//                    content.suffix?.let {
+//                        Text(
+//                            text = it,
+//                            style = TextStyle(
+//                                color = Color.White.copy(alpha = 0.7f),
+//                                fontSize = 16.sp
+//                            ),
+//                            modifier = Modifier.fillMaxWidth()
+//                        )
+//                    }
+//                    content.highlighted2?.let {
+//                        Text(
+//                            text = it,
+//                            style = TextStyle(
+//                                color = if (it.contains("%") && it.startsWith("-")) Color.Red else Color.Green,
+//                                fontSize = 16.sp,
+//                                fontWeight = FontWeight.Bold
+//                            ),
+//                            modifier = Modifier.fillMaxWidth()
+//                        )
+//                    }
+//                }
+//            }
+//        }
+        analysisContent.forEach { (header, content) ->
+            Column(
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = header,
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val annotatedText = buildAnnotatedString {
+                        append(content.text)
+                        withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                            append(content.highlighted)
+                        }
+                        content.suffix?.let { append(it) }
+                        content.highlighted2?.let {
+                            withStyle(style = SpanStyle(color = if (it.contains("%") && it.startsWith("-")) Color.Red else Color.Green)) {
+                                append(it)
+                            }
+                        }
+                        content.suffix2?.let { append(it) }
+                        content.highlighted3?.let {
+                            withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                append(it)
+                            }
+                        }
+                    }
+                    Text(
+                        text = annotatedText,
+                        style = TextStyle(
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 16.sp
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -391,8 +569,4 @@ fun RowChartContent(data: Map<String, Double>) {
         )
     }
 }
-
-
-
-
 
