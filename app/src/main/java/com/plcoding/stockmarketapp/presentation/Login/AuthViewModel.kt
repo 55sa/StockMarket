@@ -16,12 +16,14 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val googleAuthUiClient: GoogleAuthUiClient
+    private val googleAuthUiClient: GoogleAuthUiClient,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
+
+    val state: StateFlow<AuthState> = authRepository.authState
+
     private val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    private val _state = MutableStateFlow(AuthState())
-    val state: StateFlow<AuthState> = _state
 
     init {
         loadUserState()
@@ -31,25 +33,32 @@ class AuthViewModel @Inject constructor(
         val savedUsername = sharedPreferences.getString("username", null)
         val savedUserId = sharedPreferences.getString("userId", null)
         val googleUser = googleAuthUiClient.getSignedInUser()
-        _state.value = AuthState(
-            isLoggedIn = !savedUsername.isNullOrEmpty() || googleUser != null,
-            username = savedUsername.orEmpty(),
-            userId = savedUserId.orEmpty()
+        authRepository.updateAuthState(
+            AuthState(
+                isLoggedIn = !savedUsername.isNullOrEmpty() || googleUser != null,
+                username = savedUsername.orEmpty(),
+                userId = savedUserId.orEmpty()
+            )
         )
     }
 
     fun updateState(username: String? = null, password: String? = null) {
-        _state.value = _state.value.copy(
-            username = username ?: _state.value.username,
-            password = password ?: _state.value.password
+        val currentState = state.value
+        authRepository.updateAuthState(
+            currentState.copy(
+                username = username ?: currentState.username,
+                password = password ?: currentState.password
+            )
         )
     }
 
     fun handleSignUp() {
-        val username = _state.value.username
-        val password = _state.value.password
+        val username = state.value.username
+        val password = state.value.password
         if (password.length < 6) {
-            _state.value = _state.value.copy(errorMessage = "Password must be at least 6 characters.")
+            authRepository.updateAuthState(
+                state.value.copy(errorMessage = "Password must be at least 6 characters.")
+            )
             return
         }
         sharedPreferences.edit().apply {
@@ -57,20 +66,31 @@ class AuthViewModel @Inject constructor(
             putString("password", password)
             apply()
         }
-        _state.value = _state.value.copy(username = "", password = "", errorMessage = null)
+        authRepository.updateAuthState(
+            state.value.copy(username = "", password = "", errorMessage = null)
+        )
     }
 
     fun handleLogin() {
-        val username = _state.value.username
-        val password = _state.value.password
+        val username = state.value.username
+        val password = state.value.password
         val savedUsername = sharedPreferences.getString("username", null)
         val savedPassword = sharedPreferences.getString("password", null)
 
         if (username == savedUsername && password == savedPassword) {
-            sharedPreferences.edit().putString("userId", "local_user").apply() // Add a userId for local login
-            _state.value = _state.value.copy(isLoggedIn = true, errorMessage = null, userId = "local_user")
+            sharedPreferences.edit().putString("userId", "local_user").apply()
+            authRepository.updateAuthState(
+                AuthState(
+                    isLoggedIn = true,
+                    errorMessage = null,
+                    userId = "local_user",
+                    username = username
+                )
+            )
         } else {
-            _state.value = _state.value.copy(errorMessage = "Invalid credentials. Please try again.")
+            authRepository.updateAuthState(
+                state.value.copy(errorMessage = "Invalid credentials. Please try again.")
+            )
         }
     }
 
@@ -78,14 +98,16 @@ class AuthViewModel @Inject constructor(
         return try {
             googleAuthUiClient.signIn()
         } catch (e: Exception) {
-            _state.value = _state.value.copy(errorMessage = "Google Sign-In failed: ${e.message}")
+            authRepository.updateAuthState(
+                state.value.copy(errorMessage = "Google Sign-In failed: ${e.message}")
+            )
             null
         }
     }
 
     fun handleGoogleSignInResult(intentData: android.content.Intent?) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
+            authRepository.updateAuthState(state.value.copy(isLoading = true))
             val signInResult = intentData?.let { googleAuthUiClient.signInWithIntent(it) }
 
             if (signInResult != null && signInResult.data != null) {
@@ -98,17 +120,21 @@ class AuthViewModel @Inject constructor(
                     apply()
                 }
 
-                _state.value = _state.value.copy(
-                    isLoggedIn = true,
-                    userId = userData.userId,
-                    username = userData.username.orEmpty(),
-                    isLoading = false,
-                    errorMessage = null
+                authRepository.updateAuthState(
+                    AuthState(
+                        isLoggedIn = true,
+                        userId = userData.userId,
+                        username = userData.username.orEmpty(),
+                        isLoading = false,
+                        errorMessage = null
+                    )
                 )
             } else {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    errorMessage = signInResult?.errorMessage
+                authRepository.updateAuthState(
+                    state.value.copy(
+                        isLoading = false,
+                        errorMessage = signInResult?.errorMessage
+                    )
                 )
             }
         }
@@ -123,7 +149,7 @@ class AuthViewModel @Inject constructor(
             googleAuthUiClient.signOut()
 
             // Update the state to reset all values
-            _state.value = AuthState()
+            authRepository.updateAuthState(AuthState())
         }
     }
 }

@@ -59,7 +59,7 @@ fun CompanyListingsScreen(
                 )
             }
             Text(
-                text = "Company Listings",
+                text = "Search",
                 style = MaterialTheme.typography.h6,
                 modifier = Modifier.padding(start = 8.dp)
             )

@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Destination(start = true)
+//@Destination
 @Composable
 fun HomePageScreen(
     navigator: DestinationsNavigator,
@@ -94,7 +95,12 @@ fun HomePageScreen(
             item {
                 Text(
                     text = "TESLA",
-                    style = MaterialTheme.typography.h6,
+                    style = MaterialTheme.typography.body2.copy(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontStyle = FontStyle.Italic,
+                        color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    ),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
