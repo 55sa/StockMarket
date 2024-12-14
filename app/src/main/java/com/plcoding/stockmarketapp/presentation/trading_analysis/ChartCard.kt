@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.key
 
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -50,16 +51,16 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
 
 sealed class ChartType {
-    data class Line(val data: Map<String, Double>, val lineLabel: String) : ChartType()
-    data class Column(val data: Map<String, Double>, val label: String) : ChartType()
-    data class Row(val data: Map<String, Double>, val label: String) : ChartType()
+    data class Line(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
+    data class Column(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
+    data class Row(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
 
     @Composable
     fun Display() {
         when (this) {
-            is Line -> LineChartContent(data, lineLabel)
-            is Column -> ColumnChartContent(data, label)
-            is Row -> RowChartContent(data, label)
+            is Line -> LineChartContent(data, labels)
+            is Column -> ColumnChartContent(data, labels)
+            is Row -> RowChartContent(data, labels)
         }
     }
 }
@@ -83,20 +84,20 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     // Group 1
     val chartGroup1 = listOf(
         "Monthly Trading Trend" to ChartType.Line(
-            state.dailyVolumeTrend,
-            "Last Month"
+            listOf(state.dailyVolumeTrend),
+            listOf("Last Month")
         ),
-        "Category Preferences" to ChartType.Column(
-            state.userCategoryPreferences,
-            "Count"
+        "Sector Preferences" to ChartType.Column(
+            listOf(state.userCategoryPreferences),
+            listOf("Count")
         ),
         "Company Preferences" to ChartType.Column(
-            state.companyPreferences,
-            "Count"
+            listOf(state.companyPreferences),
+            listOf("Count")
         ),
         "Active Periods" to ChartType.Row(
-            state.userActivePeriods,
-            "Trades"
+            listOf(state.userActivePeriods),
+            listOf("Trades")
         ),
     )
     // Analysis Group 1
@@ -121,9 +122,11 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 text = "Last week, ",
                 highlighted = "${state.totalStocksTraded}",
                 suffix = " stocks were traded, currently holding ",
-                highlighted2 = "${state.stocksCurrentlyHeld}",
+                highlighted2 = "${ state.clearings.filter { clearingInfo ->
+                                clearingInfo.holdings.values.none { it.second > 0.0 }
+                                }.size}",
                 suffix2 = " stocks, and cleared ",
-                highlighted3 = "${state.stocksCleared} times"
+                highlighted3 = "${state.clearings.sumOf { it.clearedCount }} times"
             ),
             "Most Traded Stock" to AnnotatedText(
                 text = "The most traded stock was: ",
@@ -139,9 +142,11 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 text = "Last week, ",
                 highlighted = "${state.totalStocksTraded}",
                 suffix = " stocks were traded, currently holding ",
-                highlighted2 = "${state.stocksCurrentlyHeld}",
+                highlighted2 = "${ state.clearings.filter { clearingInfo ->
+                    clearingInfo.holdings.values.none { it.first == -1.0 }
+                }.size}",
                 suffix2 = " stocks, and cleared ",
-                highlighted3 = "${state.stocksCleared}"
+                highlighted3 = "${state.clearings.sumOf { it.clearedCount }} times"
             ),
             "Most Traded Stock" to AnnotatedText(
                 text = "The most traded stock was: ",
@@ -169,19 +174,32 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     )
 
     val chartGroup2 = listOf(
-        "Weekly Profit Analysis" to ChartType.Column(
-            data = state.clearings.associate { it.symbol to it.netProfit },
-            label = "Net Profit"
+        "Net Profit" to ChartType.Column(
+            data = listOf(
+                state.clearings.associate { it.symbol to it.netProfit }
+                ) ,
+            labels = listOf("Net Profit")
         ),
-        "Profit Ratio Analysis" to ChartType.Column(
-            data = state.clearings.associate { it.symbol to it.profitPercentage },
-            label = "Profit %"
+        "Profit Ratio" to ChartType.Column(
+            data = listOf(
+                state.clearings.associate { it.symbol to it.profitPercentage }
+            ) ,
+            labels = listOf("Profit %")
         ),
         "Weekly Transaction Trend" to ChartType.Line(
-            data = state.weeklyTransactionAnalysis.mapValues { (_, value) ->
-                value.first + value.second
-            },
-            lineLabel = "Dollars"
+            data = listOf(
+                state.weeklyTransactionAnalysis.mapValues { (_, value) ->
+                    value.first + value.second
+                }
+
+            ) ,
+            labels = listOf("Dollars")
+        ),
+        "Trading Win Rate" to ChartType.Column(
+            data = listOf(
+                state.companyWinRate
+                ),
+            labels = listOf("Win Rate (%)")
         )
     )
 
@@ -221,7 +239,16 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 suffix = " It changed by ",
                 highlighted2 = "${state.weeklyTransactionChange}%"
             )
+        ),
+        listOf(
+            "Win Rate Analysis" to AnnotatedText(
+                text = "Highest win rate stock: ",
+                highlighted = "${state.companyWinRate.maxByOrNull { it.value }?.key ?: "N/A"} (${state.companyWinRate.maxByOrNull { it.value }?.value ?: 0.0}%)",
+                suffix = ", Lowest win rate stock: ",
+                highlighted2 = "${state.companyWinRate.minByOrNull { it.value }?.key ?: "N/A"} (${state.companyWinRate.minByOrNull { it.value }?.value ?: 0.0}%)"
+            )
         )
+
     )
 
 
@@ -449,7 +476,9 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
 
                 // Display the chart for the current card
                 Box(modifier = Modifier.padding(bottom = 16.dp)){
-                    cards[currentIndex].second.Display()
+                    key(currentIndex){
+                        cards[currentIndex].second.Display()
+                    }
                 }
             }
         }
@@ -458,192 +487,263 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
 
 
 @Composable
-fun LineChartContent(data: Map<String, Double>, lineLabel: String) {
-    val chartData = data.entries
-        .sortedBy { it.key } // Sort the data
-        .map { it.key to it.value } // Change the format to List<Pair<String, Double>>
+fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>) {
 
-    val maxLabels = 5 // Because limited space, we only display 5 labels
-    val sampledLabels = remember(chartData) {
-        if (chartData.size <= maxLabels) {
-            chartData.map { it.first } // if max number of labels is less than 5, we use all of them
+    if (data.isEmpty() || labels.isEmpty()) {
+        Text("No data available", color = Color.Gray)
+        return
+    }
+
+    // Convert each map in data to List<Pair<String, Double>> while sorting keys
+    val chartData = data.map { map ->
+        map.entries
+            .sortedBy { it.key } // Sort by key
+            .map { it.key to it.value } // Convert each map to List<Pair<String, Double>>
+    }
+
+    // Find the maximum value across all datasets
+    val maxValue = chartData
+        .flatMap { it.map { pair -> pair.second } } // Extract all second values from all inner lists
+        .maxOrNull() ?: 0.0 // Default to 0.0 if no data
+
+    if (chartData.isEmpty() || maxValue == 0.0) {
+        Text("No data to display", color = Color.Gray)
+        return
+    }
+
+    // Prepare sampled labels for the x-axis
+    val maxLabels = 5
+    val sampledLabels = remember(chartData.first()) { // Use the first dataset's x-axis as the reference
+        val keys = chartData.first().map { it.first }
+        if (keys.size <= maxLabels) {
+            keys
         } else {
-            val step = (chartData.size - 1) / (maxLabels - 1).toFloat()
-            (0 until maxLabels).map { index -> chartData[(index * step).toInt()].first }
+            val step = (keys.size - 1) / (maxLabels - 1).toFloat()
+            (0 until maxLabels).map { index -> keys[(index * step).toInt()] }
         }
     }
 
-    chartData.map { it.second }.maxOrNull()?.let { maxValue ->
-        LineChart(
-            data = remember {
-                listOf(
-                    Line(
-                        label = lineLabel,
-                        values = chartData.map { it.second }, // only need the values
-                        color = Brush.horizontalGradient(
-                            colors = listOf(
-
-                                Color(0xFFDE942A),
-                                Color(0xFFB94621)
-                            ),
-                            startX = 0f,
-                            endX = 1000f
-                        ),
-                        firstGradientFillColor = Color(0xFFDE942A).copy(alpha = .5f),
-                        secondGradientFillColor = Color.Transparent,
-                        strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
-                        gradientAnimationDelay = 1000,
-                        drawStyle = DrawStyle.Stroke(width = 2.dp),
-                    )
+    LineChart(
+        data = remember {
+            // Create a Line for each dataset in `data`
+            chartData.mapIndexed { index, pairs ->
+                Line(
+                    label = labels.getOrNull(index) ?: "Line ${index + 1}",
+                    values = pairs.map { it.second }, // Extract values for this dataset
+                    color = when (index) {
+                        0 -> Brush.horizontalGradient(
+                            colors = listOf(Color(0xFFDE942A), Color(0xFFB94621))
+                        )
+                        1 -> Brush.horizontalGradient(
+                            colors = listOf(Color(0xFF3AB3E8), Color(0xFF0056A6))
+                        )
+                        2 -> Brush.horizontalGradient(
+                            colors = listOf(Color(0xFF76C7C0), Color(0xFF2A9D8F))
+                        )
+                        else -> Brush.horizontalGradient(
+                            colors = listOf(Color.Gray, Color.DarkGray)
+                        )
+                    },
+                    firstGradientFillColor = when (index) {
+                        0 -> Color(0xFFDE942A).copy(alpha = .5f)
+                        1 -> Color(0xFF3AB3E8).copy(alpha = .5f)
+                        2 -> Color(0xFF76C7C0).copy(alpha = .5f)
+                        else -> Color.Gray.copy(alpha = .5f)
+                    },
+                    secondGradientFillColor = Color.Transparent,
+                    strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
+                    gradientAnimationDelay = ((index + 1) * 500).toLong(), // Add delay between animations
+                    drawStyle = DrawStyle.Stroke(width = 2.dp)
                 )
-            },
-            zeroLineProperties = ZeroLineProperties(
-                enabled = true,
-                color = SolidColor(Color.Gray),
+            }
+        },
+        zeroLineProperties = ZeroLineProperties(
+            enabled = true,
+            color = SolidColor(Color.Gray),
+        ),
+        minValue = 0.0,
+        maxValue = maxValue + 100,
+        animationMode = AnimationMode.Together(delayBuilder = { it * 500L }),
+        labelProperties = LabelProperties(
+            enabled = true,
+            labels = sampledLabels,
+            textStyle = TextStyle.Default.copy(
+                color = Color.White,
+                fontSize = 12.sp
             ),
-            minValue = 0.0,
-            maxValue = maxValue + 100,
-            animationMode = AnimationMode.Together(delayBuilder = {
-                it * 500L
-            }),
-            labelProperties = LabelProperties(
-                enabled = true,
-                labels = sampledLabels,
-                textStyle = TextStyle.Default.copy(
-                    color = Color.White,
-                    fontSize = 12.sp
-                ),
-                padding = 5.dp, // Between Chart and label
-                rotation = LabelProperties.Rotation(
-                    mode = LabelProperties.Rotation.Mode.Force,
-                    degree = -35f
-                )
-            ),
-            indicatorProperties = HorizontalIndicatorProperties(
-                textStyle = TextStyle.Default.copy(
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
+            padding = 5.dp, // Between Chart and label
+            rotation = LabelProperties.Rotation(
+                mode = LabelProperties.Rotation.Mode.Force,
+                degree = -35f
             )
-
+        ),
+        indicatorProperties = HorizontalIndicatorProperties(
+            textStyle = TextStyle.Default.copy(
+                color = Color.White,
+                fontSize = 12.sp
+            )
         )
-    }
+    )
 }
 
 
 @Composable
-fun ColumnChartContent(data: Map<String, Double>, label: String) {
-    val chartData = data.entries
-        .sortedBy { it.key }
-        .map { it.key to it.value }
+fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>) {
+    if (data.isEmpty() || labels.isEmpty()) {
+        Text("No data available", color = Color.Gray)
+        return
+    }
 
-    chartData.map { it.second }.maxOrNull()?.let { maxValue ->
-        ColumnChart(
-            data = remember {
-                chartData.map {
-                    Bars(
-                        label = if (it.first.length > 10) it.first.take(8) + "..." else it.first,
-                        values = listOf(Bars.Data(label = label, value = it.second, color = Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF3AB3E8), // 浅蓝色
-                                Color(0xFFFFA726), // 橙色
-                                Color(0xFFFF5722)  // 深橙色
-                                ),
-                                startX = 0f,
-                                endX = 1000f
+    // Combine all unique keys from datasets to create a unified x-axis
+    val chartData = data.flatMap { it.keys }
+        .distinct()
+        .sorted()
+        .map { key ->
+            key to data.map { it[key] ?: 0.0 } // Map each key to a list of values across datasets
+        }
+
+    val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
+    if (chartData.isEmpty() || maxValue == 0.0) {
+        Text("No data to display", color = Color.Gray)
+        return
+    }
+
+    ColumnChart(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 22.dp),
+        data = remember {
+            chartData.map { (key, values) ->
+                Bars(
+                    label = if (key.length > 10) key.take(6) + "..." else key, // Shorten labels if too long
+                    values = values.mapIndexed { index, value ->
+                        Bars.Data(
+                            label = labels.getOrNull(index) ?: "Dataset ${index + 1}",
+                            value = value,
+                            color = when (index) {
+                                1 -> Brush.verticalGradient(
+                                    colors = listOf(Color(0xFF3AB3E8), Color(0xFF0056A6))
                                 )
-                            )
+                                0 -> Brush.verticalGradient(
+                                    colors = listOf(Color(0xFFFFA726), Color(0xFFFF5722))
+                                )
+                                2 -> Brush.verticalGradient(
+                                    colors = listOf(Color(0xFF76C7C0), Color(0xFF2A9D8F))
+                                )
+                                else -> Brush.verticalGradient(
+                                    colors = listOf(Color.Gray, Color.DarkGray)
+                                )
+                            }
                         )
-                    )
-                }
-            },
-            barProperties = BarProperties(
-                cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
-                spacing = 3.dp,
-                thickness = 12.dp
-            ),
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-            labelProperties = LabelProperties(
-                enabled = true,
-                textStyle = TextStyle.Default.copy(
-                    color = Color.White,
-                    fontSize = 10.sp
-                ),
-                padding = 5.dp, // Between Chart and label
-                rotation = LabelProperties.Rotation(
-                    mode = LabelProperties.Rotation.Mode.Force,
-                    degree = -35f
+                    }
                 )
+            }
+        },
+        barProperties = BarProperties(
+            cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
+            spacing = 3.dp,
+            thickness = 12.dp
+        ),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        labelProperties = LabelProperties(
+            enabled = true,
+            textStyle = TextStyle.Default.copy(
+                color = Color.White,
+                fontSize = 10.sp
             ),
-            indicatorProperties = HorizontalIndicatorProperties(
-                textStyle = TextStyle.Default.copy(
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
+            padding = 5.dp, // Between Chart and label
+            rotation = LabelProperties.Rotation(
+                mode = LabelProperties.Rotation.Mode.Force,
+                degree = -35f
             )
-
+        ),
+        indicatorProperties = HorizontalIndicatorProperties(
+            textStyle = TextStyle.Default.copy(
+                color = Color.White,
+                fontSize = 12.sp
+            )
         )
-    }
+    )
 }
-
-
 
 @Composable
-fun RowChartContent(data: Map<String, Double>, label: String) {
-    data.entries.map { it.value }.maxOrNull()?.let { maxValue ->
-        RowChart(
-            data = remember {
-                data.entries.map { entry ->
-                    Bars(
-                        label = entry.key,
-                        values = listOf(
-                            Bars.Data(label = label, value = entry.value, color = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF3AB3E8), // 浅蓝色
-                                    Color(0xFFFFA726), // 橙色
-                                    Color(0xFFFF5722)  // 深橙色
-                                ),
-                                startX = 0f,
-                                endX = 1000f // adjust according to screen brightness
-                            )
-                            )
+fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>) {
+    if (data.isEmpty() || labels.isEmpty()) {
+        Text("No data available", color = Color.Gray)
+        return
+    }
+
+    // Combine all unique keys from datasets to create a unified x-axis
+    val chartData = data.flatMap { it.keys }
+        .distinct()
+        .sorted() // Sort keys for consistent ordering
+        .map { key ->
+            key to data.map { it[key] ?: 0.0 } // Map each key to a list of values across datasets
+        }
+
+    val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
+    if (chartData.isEmpty() || maxValue == 0.0) {
+        Text("No data to display", color = Color.Gray)
+        return
+    }
+
+    RowChart(
+        data = remember {
+            chartData.map { (key, values) ->
+                Bars(
+                    label = if (key.length > 10) key.take(8) + "..." else key, // Shorten labels if too long
+                    values = values.mapIndexed { index, value ->
+                        Bars.Data(
+                            label = labels.getOrNull(index) ?: "Dataset ${index + 1}",
+                            value = value,
+                            color = when (index) {
+                                0 -> Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFFFFA726), Color(0xFFFF5722))
+                                )
+                                1 -> Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF3AB3E8), Color(0xFF0056A6))
+                                )
+                                2 -> Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF76C7C0), Color(0xFF2A9D8F))
+                                )
+                                else -> Brush.horizontalGradient(
+                                    colors = listOf(Color.Gray, Color.DarkGray)
+                                )
+                            }
                         )
-                    )
-                }
-            },
-            minValue = 0.0,
-            maxValue = maxValue + 10,
-            barProperties = BarProperties(
-                cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
-                spacing = 3.dp,
-                thickness = 15.dp
-            ),
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-            labelProperties = LabelProperties(
-                enabled = true,
-                textStyle = TextStyle.Default.copy(
-                    color = Color.White,
-                    fontSize = 12.sp
-                ),
-                padding = 5.dp, // Between Chart and label
-                rotation = LabelProperties.Rotation(
-                    mode = LabelProperties.Rotation.Mode.Force,
-                    degree = -35f
+                    }
                 )
+            }
+        },
+        minValue = 0.0,
+        maxValue = maxValue + 10,
+        barProperties = BarProperties(
+            cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
+            spacing = 3.dp,
+            thickness = 15.dp
+        ),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        labelProperties = LabelProperties(
+            enabled = true,
+            textStyle = TextStyle.Default.copy(
+                color = Color.White,
+                fontSize = 12.sp
             ),
-            indicatorProperties = VerticalIndicatorProperties(
-                textStyle = TextStyle.Default.copy(
-                    color = Color.White,
-                    fontSize = 12.sp
-                )
+            padding = 5.dp, // Between Chart and label
+            rotation = LabelProperties.Rotation(
+                mode = LabelProperties.Rotation.Mode.Force,
+                degree = -35f
+            )
+        ),
+        indicatorProperties = VerticalIndicatorProperties(
+            textStyle = TextStyle.Default.copy(
+                color = Color.White,
+                fontSize = 12.sp
             )
         )
-    }
+    )
 }
-

@@ -84,7 +84,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     private fun updateTradingAnalysisState() {
         viewModelScope.launch {
-            val (clearing, holdings) = calculateClearingInfo()
+            val clearing = calculateClearingInfo()
             _state.emit(
                 _state.value.copy(
                     // V 1.0
@@ -97,6 +97,8 @@ class TradingAnalysisViewModel  @Inject constructor(
                     // V 2.0
 
                     // Update the rest
+                    clearings = clearing,
+
                     weeklyTotalTrades = calculateWeeklyTotalTrades(),
                     weeklyTradeGrowthPercentage = calculateWeeklyTradeGrowth(),
                     totalTTrades = calculateTotalTTrades(),
@@ -111,10 +113,9 @@ class TradingAnalysisViewModel  @Inject constructor(
                     mostActiveSellTime = calculateMostActiveSellTime(),
                     mostActiveSellCount = calculateMostActiveSellCount(),
                     weeklyTransactionChange = calculateWeeklyChange(calculateWeeklyTransactionAnalysis(referenceDate)),
+                    companyPreferences = calculateCompanyPreferences(),
+                    companyWinRate = calculateStockWinRates(clearing),
 
-
-                    clearings = clearing,
-                    holdings = holdings
                 )
             )
         }
@@ -133,7 +134,7 @@ class TradingAnalysisViewModel  @Inject constructor(
     }
 
     private fun calculateTransactionAmountDistribution(): Map<String, Double> {
-        return _state.value.tradingData.groupBy { it.side } // Group by TradeSide (BUY/SELL)
+        return _state.value.lastWeekData.groupBy { it.side } // Group by TradeSide (BUY/SELL)
             .mapKeys { (side, _) -> side.toString() } // 将 TradeSide 转换为 String
             .mapValues { (_, entries) ->
                 entries.sumOf { entry ->
@@ -144,7 +145,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
 
     private fun calculateUserActivePeriods(): Map<String, Double> {
-        return _state.value.tradingData
+        return _state.value.lastWeekData
             .groupBy { it.createdAt.substring(11, 16) } // 提取时间部分 (HH:mm)
             .mapKeys { (time, _) ->
                 val hourMinute = time.split(":").map { it.toInt() }
@@ -186,6 +187,7 @@ class TradingAnalysisViewModel  @Inject constructor(
             .mapValues { (_, sizes) -> sizes.sum() }
     }
 
+    @SuppressLint("DefaultLocale")
     private fun calculateWeeklyTransactionAnalysis(referenceDate: java.time.LocalDate = java.time.LocalDate.now()): Map<String, Pair<Double,Double>> {
         val recentWeeklyData = (0 until 4).associate { weeksAgo ->
             val weekData = filterWeekData(referenceDate, weeksAgo).filter{it.state != OrderState.CANCELLED}
@@ -197,7 +199,7 @@ class TradingAnalysisViewModel  @Inject constructor(
             val totalSell = weekData.filter { it.side == TradeSide.SELL }
                 .sumOf { it.filledAssetQuantity * it.averagePrice }
 
-            weekStartDate.takeLast(5) to (totalBuy to totalSell)
+            weekStartDate.takeLast(5) to (totalBuy.let { String.format("%.2f", it).toDouble() } to totalSell.let { String.format("%.2f", it).toDouble() })
         }
         Log.d("calculateWeeklyTransactionAnalysis", "calculateWeeklyTransactionAnalysis: $recentWeeklyData")
         return recentWeeklyData
@@ -271,10 +273,11 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     }
 
-    // TODO: 这里这两个算法不对，做T应该是当天对于同一只股票的买卖
     // 做 T 的交易次数
     private fun calculateTotalTTrades(): Int {
-        return _state.value.lastWeekData.count { it.type == OrderType.STOP_LIMIT || it.type == OrderType.STOP_LOSS }
+        return _state.value.lastWeekData
+            .groupBy { it.symbol to it.createdAt.substring(0, 10) } // Group by symbol and date
+            .count { (_, trades) -> trades.size > 1 } // Count groups with more than one trade
     }
 
     // 做 T 的成功率
@@ -352,7 +355,7 @@ class TradingAnalysisViewModel  @Inject constructor(
     }
 
     @SuppressLint("DefaultLocale")
-    private fun calculateClearingInfo(): Pair<List<ClearingInfo>, Map<String, Pair<Double, Double>>> {
+    private fun calculateClearingInfo(): List<ClearingInfo> {
         // return type: Pair<List<ClearingInfo>, Map<String,Pair<Double, Double>>>
 //        var clearings: List<ClearingInfo> = emptyList()
         val clearings = mutableListOf<ClearingInfo>()
@@ -377,6 +380,7 @@ class TradingAnalysisViewModel  @Inject constructor(
             var netProfit = 0.0
             var totalBuyCost = 0.0
             var profitPercentage = 0.0
+            var clearedCount = 0
 
             for (trade in stockTradingData) {
                 Log.d("calculateClearingInfo", "trade: $trade")
@@ -403,6 +407,7 @@ class TradingAnalysisViewModel  @Inject constructor(
                             // 如果列表为空，停止处理，防止异常
                             currentHoldings -= sellQuantity
                             sellQuantity -= sellQuantity
+                            clearedCount += 1
                             break
                         }
 
@@ -446,25 +451,46 @@ class TradingAnalysisViewModel  @Inject constructor(
             Log.d("calculateClearingInfo", "___entries end___")
             profitPercentage = netProfit / totalBuyCost
 
+
+
+            var averageCost: Double = -1.0
+
+            if (currentHoldings > 0.0){
+                averageCost = holdingCost / currentHoldings
+            }
+
+            holdings[symbol] = Pair(averageCost, currentHoldings)
+
             clearings.add(
                 ClearingInfo(
                     symbol = symbol,
                     netProfit = String.format("%.2f", netProfit).toDouble(),
                     profitPercentage = String.format("%.2f", profitPercentage).toDouble(),
                     successCount = successCount,
-                    failureCount = failureCount
+                    failureCount = failureCount,
+                    holdings = holdings,
+                    clearedCount = clearedCount
                 )
             )
-            if (currentHoldings > 0) {
-                val averageCost = holdingCost / currentHoldings
-                holdings[symbol] = Pair(averageCost, currentHoldings) // 记录平均成本和数量
-            }
             Log.d("calculateClearingInfo", "clearings: $clearings")
         }
 
-//        Log.d("clearings", "calculateClearingInfo: $clearings")
-//        return Pair(clearings, holdings)
-        return Pair(clearings, holdings)
+        return clearings
     }
+
+    @SuppressLint("DefaultLocale")
+    private fun calculateStockWinRates(clearings: List<ClearingInfo>): Map<String, Double> {
+        return clearings.associate { info ->
+            val totalTrades = info.successCount + info.failureCount
+            val winRate = if (totalTrades > 0) info.successCount.toDouble() / totalTrades else 0.0
+            info.symbol to String.format("%.2f", winRate * 100).toDouble()
+        }
+    }
+
+    private fun calculateCompanyPreferences(): Map<String, Double> {
+        return _state.value.lastWeekData.groupBy { it.symbol } // 按股票代码分组
+            .mapValues { (_, entries) -> entries.size.toDouble() } // 统计每只股票的交易次数
+    }
+
 
 }

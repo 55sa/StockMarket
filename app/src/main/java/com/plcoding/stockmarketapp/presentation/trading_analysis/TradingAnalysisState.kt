@@ -40,9 +40,9 @@ data class TradingAnalysisState (
     val companyPreferences: Map<String, Double> = emptyMap(),
 
     // for Profit Analysis
-
     var clearings: List<ClearingInfo> = emptyList(),
-    var holdings: Map<String,Pair<Double, Double>> = emptyMap()
+    val companyWinRate: Map<String,Double> = emptyMap(),
+
 )
 
 data class ClearingInfo(
@@ -50,5 +50,7 @@ data class ClearingInfo(
     val netProfit: Double,
     val profitPercentage: Double,
     val successCount: Int,
-    val failureCount: Int
+    val failureCount: Int,
+    val holdings: Map<String, Pair<Double, Double>>,
+    val clearedCount: Int,
 )
