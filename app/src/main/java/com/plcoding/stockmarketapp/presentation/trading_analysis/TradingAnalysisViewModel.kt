@@ -26,6 +26,10 @@ import com.plcoding.stockmarketapp.domain.model.TradingDataEntry
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.Login.AuthRepository
 import com.plcoding.stockmarketapp.presentation.Login.AuthViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -47,6 +51,9 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     private val _state = MutableStateFlow(TradingAnalysisState())
     val state: StateFlow<TradingAnalysisState> = _state
+    val total: StateFlow<Double> = _state
+        .map { it.clearings.sumOf { clearing -> clearing.netProfit } }
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0.0)
 
     val referenceDate = java.time.LocalDate.of(2024, 11, 22) // Dummy Data TODO
 
@@ -66,6 +73,9 @@ class TradingAnalysisViewModel  @Inject constructor(
             }
         }
     }
+
+
+
 
 
 
@@ -112,6 +122,7 @@ class TradingAnalysisViewModel  @Inject constructor(
                     )
                 )
                 updateTradingAnalysisState()
+
 
 
                 Log.d("TradingAnalysisViewModel", "交易数据和纳斯达克数据加载完成。")

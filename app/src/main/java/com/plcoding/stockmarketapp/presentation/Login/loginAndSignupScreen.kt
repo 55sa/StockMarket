@@ -1,6 +1,7 @@
 
 package com.plcoding.stockmarketapp.presentation.Login
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.IntentSender
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,15 +43,18 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
 import com.plcoding.stockmarketapp.presentation.Main_Screen.FloatingTitle
+import com.plcoding.stockmarketapp.presentation.trading_analysis.TradingAnalysisViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Destination
 @Composable
 fun LoginAndSignUpScreen(
     navigator: DestinationsNavigator,
-    viewModel: AuthViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel(),
+    analysis: TradingAnalysisViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val googleSignInLauncher = rememberLauncherForActivityResult(
@@ -58,6 +62,11 @@ fun LoginAndSignUpScreen(
     ) { result ->
         viewModel.handleGoogleSignInResult(result.data)
     }
+
+
+
+    val total by analysis.total.collectAsState(initial = 0.0)
+
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -77,7 +86,8 @@ fun LoginAndSignUpScreen(
         ) {
             if (state.isLoggedIn) {
                 // 登录后导航到成功页面
-                SuccessfulPage(navigator, onLogOut = { viewModel.logout() }, name = state.username)
+                SuccessfulPage(navigator, onLogOut = { viewModel.logout() }, name = state.username, total= total?.toDouble()
+                    ?: 0.0)
             } else {
                 // 显示“使用 Google 登录”按钮
                 GoogleSignInButton(
@@ -152,7 +162,8 @@ fun GoogleSignInButton(onClick: () -> Unit) {
 fun SuccessfulPage(
     navigator: DestinationsNavigator,
     onLogOut: () -> Unit = {},
-    name: String
+    name: String,
+    total: Double
 ) {
     Column(
         modifier = Modifier
@@ -161,7 +172,7 @@ fun SuccessfulPage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 购买力卡片
-        BuyingPowerCard(name)
+        BuyingPowerCard(name,total)
 
         Spacer(modifier = Modifier.height(40.dp)) // 调整空白高度
 
@@ -195,7 +206,7 @@ fun SuccessfulPage(
 }
 
 @Composable
-fun BuyingPowerCard(name: String) {
+fun BuyingPowerCard(name: String, total :Double) {
     Card(
         shape = RoundedCornerShape(12.dp),
         backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f), // 使用主题主色的浅色变体
@@ -212,7 +223,7 @@ fun BuyingPowerCard(name: String) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Buying Power",
+                text = "Total Net Worth",
                 style = MaterialTheme.typography.h6.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colors.onSurface
@@ -220,7 +231,7 @@ fun BuyingPowerCard(name: String) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "18631.6 USDT",
+                text = "$${"%.2f".format(total)}",
                 style = MaterialTheme.typography.h4.copy(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colors.onSurface

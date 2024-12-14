@@ -26,6 +26,7 @@ import ir.ehsannarmani.compose_charts.models.*
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +76,8 @@ data class AnnotatedText(
     val suffix2: String? = null,
     val highlighted3: String? = null
 )
+
+
 
 
 @Composable
@@ -269,7 +272,7 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF121212))
+            .background(androidx.compose.material.MaterialTheme.colors.background)
     ) {
 
 
@@ -550,6 +553,8 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
         return
     }
 
+
+
     // Convert each map in data to List<Pair<String, Double>> while sorting keys
     val chartData = if (isToggled) {
         // Convert all datasets
@@ -587,6 +592,18 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
             (0 until maxLabels).map { index -> keys[(index * step).toInt()] }
         }
     }
+    val isDarkTheme = isSystemInDarkTheme()
+
+    val labelTextStyle = TextStyle(
+        color = if (isDarkTheme) Color.Green else Color.Black, // Dynamic color based on theme
+        fontSize = 14.sp,                                      // Increased font size
+        fontWeight = FontWeight.Medium,                        // Enhanced font weight
+        fontStyle = FontStyle.Italic,                          // Set font style to Italic
+        letterSpacing = 0.5.sp,                                // Increased letter spacing
+        lineHeight = 20.sp,                                    // Adjusted line height
+        fontFamily = FontFamily.SansSerif
+
+    )
 
     LineChart(
         data = remember {
