@@ -84,7 +84,8 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     private fun updateTradingAnalysisState() {
         viewModelScope.launch {
-            val clearing = calculateClearingInfo()
+            val lastWeekClearing = calculateClearingInfo(_state.value.lastWeekData)
+            val weekBeforeLastWeekClearing = calculateClearingInfo(_state.value.weekBeforeLastData)
             _state.emit(
                 _state.value.copy(
                     // V 1.0
@@ -97,7 +98,8 @@ class TradingAnalysisViewModel  @Inject constructor(
                     // V 2.0
 
                     // Update the rest
-                    clearings = clearing,
+                    clearings = lastWeekClearing,
+                    lastWeekClearings = weekBeforeLastWeekClearing,
 
                     weeklyTotalTrades = calculateWeeklyTotalTrades(),
                     weeklyTradeGrowthPercentage = calculateWeeklyTradeGrowth(),
@@ -114,7 +116,9 @@ class TradingAnalysisViewModel  @Inject constructor(
                     mostActiveSellCount = calculateMostActiveSellCount(),
                     weeklyTransactionChange = calculateWeeklyChange(calculateWeeklyTransactionAnalysis(referenceDate)),
                     companyPreferences = calculateCompanyPreferences(),
-                    companyWinRate = calculateStockWinRates(clearing),
+                    companyWinRate = calculateStockWinRates(lastWeekClearing),
+                    lastWeekCompanyWinRate = calculateStockWinRates(weekBeforeLastWeekClearing),
+
 
                 )
             )
@@ -355,13 +359,13 @@ class TradingAnalysisViewModel  @Inject constructor(
     }
 
     @SuppressLint("DefaultLocale")
-    private fun calculateClearingInfo(): List<ClearingInfo> {
+    private fun calculateClearingInfo(data: List<TradingDataEntry>): List<ClearingInfo> {
         // return type: Pair<List<ClearingInfo>, Map<String,Pair<Double, Double>>>
 //        var clearings: List<ClearingInfo> = emptyList()
         val clearings = mutableListOf<ClearingInfo>()
         val holdings = mutableMapOf<String, Pair<Double, Double>>()
 
-        val groupedAndSortedTradingData = _state.value.lastWeekData
+        val groupedAndSortedTradingData = data
             .filter { it.state != OrderState.CANCELLED }
             .groupBy { it.symbol }
             .mapValues { (_, entries) ->

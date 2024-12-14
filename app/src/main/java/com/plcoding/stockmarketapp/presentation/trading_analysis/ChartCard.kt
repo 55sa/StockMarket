@@ -43,12 +43,14 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.times
 
 sealed class ChartType {
     data class Line(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
@@ -56,11 +58,11 @@ sealed class ChartType {
     data class Row(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
 
     @Composable
-    fun Display() {
+    fun Display(isToggled: Boolean = false) {
         when (this) {
-            is Line -> LineChartContent(data, labels)
-            is Column -> ColumnChartContent(data, labels)
-            is Row -> RowChartContent(data, labels)
+            is Line -> LineChartContent(data, labels, isToggled)
+            is Column -> ColumnChartContent(data, labels, isToggled)
+            is Row -> RowChartContent(data, labels, isToggled)
         }
     }
 }
@@ -81,6 +83,10 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     val state = viewModel.state.collectAsState().value
 
     // V 2.0
+
+    // toggle Indices
+    val toggleIndices1 = emptyList<Int>()
+
     // Group 1
     val chartGroup1 = listOf(
         "Monthly Trading Trend" to ChartType.Line(
@@ -89,15 +95,15 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
         ),
         "Sector Preferences" to ChartType.Column(
             listOf(state.userCategoryPreferences),
-            listOf("Count")
+            listOf("This Week")
         ),
         "Company Preferences" to ChartType.Column(
             listOf(state.companyPreferences),
-            listOf("Count")
+            listOf("This Week")
         ),
         "Active Periods" to ChartType.Row(
             listOf(state.userActivePeriods),
-            listOf("Trades")
+            listOf("This Week")
         ),
     )
     // Analysis Group 1
@@ -173,18 +179,25 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
         )
     )
 
+    // toggle indecy:
+
+    val toggleIndices2 = listOf(0,1,3)
+
+    // chartGroup2
     val chartGroup2 = listOf(
         "Net Profit" to ChartType.Column(
             data = listOf(
-                state.clearings.associate { it.symbol to it.netProfit }
+                state.clearings.associate { it.symbol to it.netProfit },
+                state.lastWeekClearings.associate { it.symbol to it.netProfit }
                 ) ,
-            labels = listOf("Net Profit")
+            labels = listOf("This Week","Last Week")
         ),
         "Profit Ratio" to ChartType.Column(
             data = listOf(
-                state.clearings.associate { it.symbol to it.profitPercentage }
+                state.clearings.associate { it.symbol to it.profitPercentage },
+                state.lastWeekClearings.associate { it.symbol to it.profitPercentage },
             ) ,
-            labels = listOf("Profit %")
+            labels = listOf("This Week %", "Last Week %")
         ),
         "Weekly Transaction Trend" to ChartType.Line(
             data = listOf(
@@ -197,9 +210,10 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
         ),
         "Trading Win Rate" to ChartType.Column(
             data = listOf(
-                state.companyWinRate
+                state.companyWinRate,
+                state.lastWeekCompanyWinRate
                 ),
-            labels = listOf("Win Rate (%)")
+            labels = listOf("This Week (%)","Last Week (%)")
         )
     )
 
@@ -287,7 +301,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 AnalysisAndChartGroup(
                     title = "Trading Analysis",
                     analysisContent = analysisGroup1,
-                    cards = chartGroup1
+                    cards = chartGroup1,
+                    toggleIndices = toggleIndices1
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -300,7 +315,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                 AnalysisAndChartGroup(
                     title = "Profit Analysis",
                     analysisContent = analysisGroup2,
-                    cards = chartGroup2
+                    cards = chartGroup2,
+                    toggleIndices = toggleIndices2
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -319,7 +335,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 @Composable
 fun AnalysisAndChartGroup(title: String,
                          analysisContent: List<List<Pair<String, AnnotatedText>>>,
-                         cards: List<Pair<String, ChartType>>
+                         cards: List<Pair<String, ChartType>>,
+                         toggleIndices: List<Int>
                          ) {
     var currentIndex by remember { mutableStateOf(0) }
 
@@ -348,9 +365,12 @@ fun AnalysisAndChartGroup(title: String,
         }
 
         // 卡片组件
-        SwipableCardComponent(cards = cards, onCardIndexChange =  { newIndex ->
-            currentIndex = newIndex
-        })
+        SwipableCardComponent(
+            cards = cards,
+            onCardIndexChange =  { newIndex ->
+            currentIndex = newIndex },
+            toggleIndices
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -405,10 +425,15 @@ fun AnalysisAndChartGroup(title: String,
 
 @Composable
 fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
-                          onCardIndexChange: (Int) -> Unit) {
+                          onCardIndexChange: (Int) -> Unit,
+                          toggleIndices: List<Int>
+     ) {
     var currentIndex by remember { mutableStateOf(0) }
     var dragOffset by remember { mutableStateOf(0f) }
     val animatedOffset by animateFloatAsState(targetValue = dragOffset)
+    val switchStates = remember { mutableStateMapOf<Int, Boolean>() }
+
+
 
     Box(
         Modifier
@@ -458,26 +483,76 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                BasicText(
-                    text = cards[currentIndex].first,
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                        shadow = Shadow(
-                            color = Color.Black,
-                            offset = Offset(4f, 4f),
-                            blurRadius = 8f
-                        )
-                    ),
-                    modifier = Modifier.padding(8.dp)
-                )
 
-                // Display the chart for the current card
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                        .fillMaxWidth()
+                ) {
+                    // Title (Centered in the Box)
+                    BasicText(
+                        text = cards[currentIndex].first,
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            shadow = Shadow(
+                                color = Color.Black,
+                                offset = Offset(4f, 4f),
+                                blurRadius = 8f
+                            )
+                        ),
+                        modifier = Modifier
+                            .align(Alignment.Center) // Align text to the center of the Box
+                            .padding(8.dp)
+                    )
+
+                    // Toggle content (Positioned in the bottom-right corner)
+                    if (toggleIndices.contains(currentIndex)) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.Bottom,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd) // Align to bottom-right corner of the Box
+                                .padding(8.dp)
+                        ) {
+                            BasicText(
+                                text = "Compare",
+                                style = TextStyle(
+                                    color = Color.White.copy(alpha = 0.7f), // Subtle color for label
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+
+                            androidx.compose.material3.Switch(
+                                checked = switchStates[currentIndex] ?: false,
+                                onCheckedChange = { isChecked ->
+                                    switchStates[currentIndex] = isChecked
+                                },
+                                modifier = Modifier.size(32.dp), // Adjust the size of the Switch
+                                colors = androidx.compose.material3.SwitchDefaults.colors(
+                                    checkedThumbColor = Color(0xFF3AB3E8),
+                                    uncheckedThumbColor = Color.Gray
+                                )
+                            )
+                        }
+                    }
+                }
+
+
+
                 Box(modifier = Modifier.padding(bottom = 16.dp)){
                     key(currentIndex){
-                        cards[currentIndex].second.Display()
+                        if ((switchStates[currentIndex] == true) && toggleIndices.contains(currentIndex)) {
+                            // Render the comparison chart when the switch is toggled on
+                            // Replace this with a method to show the comparison chart
+                            cards[currentIndex].second.Display(isToggled = true)
+                        } else {
+                            cards[currentIndex].second.Display()
+                        }
                     }
                 }
             }
@@ -487,7 +562,7 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
 
 
 @Composable
-fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>) {
+fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isToggled: Boolean = false) {
 
     if (data.isEmpty() || labels.isEmpty()) {
         Text("No data available", color = Color.Gray)
@@ -495,10 +570,19 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>) {
     }
 
     // Convert each map in data to List<Pair<String, Double>> while sorting keys
-    val chartData = data.map { map ->
-        map.entries
-            .sortedBy { it.key } // Sort by key
-            .map { it.key to it.value } // Convert each map to List<Pair<String, Double>>
+    val chartData = if (isToggled) {
+        // Convert all datasets
+        data.map { map ->
+            map.entries
+                .sortedBy { it.key }
+                .map { it.key to it.value }
+        }
+    } else {
+        // Use only the first dataset
+        data.firstOrNull()?.entries
+            ?.sortedBy { it.key }
+            ?.map { it.key to it.value }
+            ?.let { listOf(it) } ?: emptyList()
     }
 
     // Find the maximum value across all datasets
@@ -588,19 +672,33 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>) {
 
 
 @Composable
-fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>) {
+fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isToggled: Boolean = false) {
     if (data.isEmpty() || labels.isEmpty()) {
         Text("No data available", color = Color.Gray)
         return
     }
 
     // Combine all unique keys from datasets to create a unified x-axis
-    val chartData = data.flatMap { it.keys }
-        .distinct()
-        .sorted()
-        .map { key ->
-            key to data.map { it[key] ?: 0.0 } // Map each key to a list of values across datasets
-        }
+    val chartData = if (isToggled) {
+        // Combine all unique keys from all datasets
+        data.flatMap { it.keys }
+            .distinct()
+            .sorted()
+            .map { key ->
+                key to data.map { it[key] ?: 0.0 } // Map each key to a list of values across datasets
+            }
+    } else {
+        // Use only the first dataset
+        data.firstOrNull()?.entries?.sortedBy { it.key }?.map { entry ->
+            entry.key to listOf(entry.value)
+        } ?: emptyList()
+    }
+
+    val adjustedThickness = if (isToggled) {
+        maxOf(4.dp, 12.dp - (data.size - 1) * 4.dp) // Reduce thickness by 4 for each additional dataset, minimum 4.dp
+    } else {
+        12.dp // Default thickness when not toggled
+    }
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
@@ -640,7 +738,7 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>) {
         barProperties = BarProperties(
             cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
             spacing = 3.dp,
-            thickness = 12.dp
+            thickness = adjustedThickness
         ),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -668,7 +766,7 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>) {
 }
 
 @Composable
-fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>) {
+fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isToggled: Boolean = false) {
     if (data.isEmpty() || labels.isEmpty()) {
         Text("No data available", color = Color.Gray)
         return
@@ -677,7 +775,6 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>) {
     // Combine all unique keys from datasets to create a unified x-axis
     val chartData = data.flatMap { it.keys }
         .distinct()
-        .sorted() // Sort keys for consistent ordering
         .map { key ->
             key to data.map { it[key] ?: 0.0 } // Map each key to a list of values across datasets
         }

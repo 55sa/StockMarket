@@ -43,6 +43,10 @@ data class TradingAnalysisState (
     var clearings: List<ClearingInfo> = emptyList(),
     val companyWinRate: Map<String,Double> = emptyMap(),
 
+    // Previous week's data for comparison
+    val lastWeekCompanyWinRate: Map<String,Double> = emptyMap(),
+    val lastWeekClearings: List<ClearingInfo> = emptyList(),
+
 )
 
 data class ClearingInfo(
