@@ -1,7 +1,6 @@
 package com.plcoding.stockmarketapp.presentation.trading_analysis
 
 
-import android.util.Log
 import androidx.compose.animation.core.EaseInOutCubic
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -13,8 +12,6 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import ir.ehsannarmani.compose_charts.RowChart
 import ir.ehsannarmani.compose_charts.*
 import ir.ehsannarmani.compose_charts.models.*
-import kotlin.math.log
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -44,26 +40,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.text.Spanned
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
 
 sealed class ChartType {
-    data class Line(val data: Map<String, Double>) : ChartType()
-    data class Column(val data: Map<String, Double>) : ChartType()
-    data class Row(val data: Map<String, Double>) : ChartType()
+    data class Line(val data: Map<String, Double>, val lineLabel: String) : ChartType()
+    data class Column(val data: Map<String, Double>, val label: String) : ChartType()
+    data class Row(val data: Map<String, Double>, val label: String) : ChartType()
 
     @Composable
     fun Display() {
         when (this) {
-            is Line -> LineChartContent(data)
-            is Column -> ColumnChartContent(data)
-            is Row -> RowChartContent(data)
+            is Line -> LineChartContent(data, lineLabel)
+            is Column -> ColumnChartContent(data, label)
+            is Row -> RowChartContent(data, label)
         }
     }
 }
@@ -83,158 +79,201 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
     val state = viewModel.state.collectAsState().value
 
-    // V 1.0
-    val cardsToDraw = listOf(
-            "Daily Volume Trend" to ChartType.Line(
-                state.dailyVolumeTrend
-            ),
-            "Transaction Amount Distribution" to ChartType.Column(
-                state.transactionAmountDistribution
-            ),
-            "User Active Periods" to ChartType.Row(
-                state.userActivePeriods
-            ),
-
-            "User Category Preferences" to ChartType.Column(
-                state.userCategoryPreferences
-            ),
-
-            "Monthly Transaction Analysis" to ChartType.Column(
-                state.monthlyTransactionAnalysis
-            ),
-
-            "Profit Loss Distribution" to ChartType.Column(
-                state.profitLossDistribution
-            )
-        )
-
     // V 2.0
+    // Group 1
+    val chartGroup1 = listOf(
+        "Monthly Trading Trend" to ChartType.Line(
+            state.dailyVolumeTrend,
+            "Last Month"
+        ),
+        "Category Preferences" to ChartType.Column(
+            state.userCategoryPreferences,
+            "Count"
+        ),
+        "Company Preferences" to ChartType.Column(
+            state.companyPreferences,
+            "Count"
+        ),
+        "Active Periods" to ChartType.Row(
+            state.userActivePeriods,
+            "Trades"
+        ),
+    )
+    // Analysis Group 1
     val analysisGroup1 = listOf(
-        "Total Trades" to AnnotatedText(
-            text = "Last week, a total of ",
-            highlighted = "${state.weeklyTotalTrades}",
-            suffix = " trades were made. Compared to the previous week, there was a ",
-            highlighted2 = "${state.weeklyTradeGrowthPercentage}%",
-            suffix2 = " change."
+        listOf( // chart 1
+            "Total Trades" to AnnotatedText(
+                text = "Last week, a total of ",
+                highlighted = "${state.weeklyTotalTrades}",
+                suffix = " trades were made. Compared to the previous week, there was a ",
+                highlighted2 = "${state.weeklyTradeGrowthPercentage}%",
+                suffix2 = " change."
+            ),
+            "T Trades" to AnnotatedText(
+                text = "A total of ",
+                highlighted = "${state.totalTTrades}",
+                suffix = " T trades were made with a success rate of ",
+                highlighted2 = "${state.successfulTradePercentage}%"
+            ),
         ),
-        "T Trades" to AnnotatedText(
-            text = "A total of ",
-            highlighted = "${state.totalTTrades}",
-            suffix = " T trades were made with a success rate of ",
-            highlighted2 = "${state.successfulTradePercentage}%"
+        listOf( // chart 2
+            "Stocks Summary" to AnnotatedText(
+                text = "Last week, ",
+                highlighted = "${state.totalStocksTraded}",
+                suffix = " stocks were traded, currently holding ",
+                highlighted2 = "${state.stocksCurrentlyHeld}",
+                suffix2 = " stocks, and cleared ",
+                highlighted3 = "${state.stocksCleared} times"
+            ),
+            "Most Traded Stock" to AnnotatedText(
+                text = "The most traded stock was: ",
+                highlighted = state.mostTradedStock
+            ),
+            "Active Sector" to AnnotatedText(
+                text = "The most active sector was: ",
+                highlighted = state.mostActiveSector
+            ),
         ),
-        "Stocks Summary" to AnnotatedText(
-            text = "Last week, ",
-            highlighted = "${state.totalStocksTraded}",
-            suffix = " stocks were traded, currently holding ",
-            highlighted2 = "${state.stocksCurrentlyHeld}",
-            suffix2 = " stocks, and cleared ",
-            highlighted3 = "${state.stocksCleared}"
+        listOf( // chart 3
+            "Stocks Summary" to AnnotatedText(
+                text = "Last week, ",
+                highlighted = "${state.totalStocksTraded}",
+                suffix = " stocks were traded, currently holding ",
+                highlighted2 = "${state.stocksCurrentlyHeld}",
+                suffix2 = " stocks, and cleared ",
+                highlighted3 = "${state.stocksCleared}"
+            ),
+            "Most Traded Stock" to AnnotatedText(
+                text = "The most traded stock was: ",
+                highlighted = state.mostTradedStock
+            ),
+            "Active Sector" to AnnotatedText(
+                text = "The most active sector was: ",
+                highlighted = state.mostActiveSector
+            ),
         ),
-        "Most Traded Stock" to AnnotatedText(
-            text = "The most traded stock was: ",
-            highlighted = state.mostTradedStock
-        ),
-        "Active Sector" to AnnotatedText(
-            text = "The most active sector was: ",
-            highlighted = state.mostActiveSector
-        ),
-        "Buying Time" to AnnotatedText(
-            text = "The most active buying time was: ",
-            highlighted = state.mostActiveBuyTime,
-            suffix = ", with ",
-            highlighted2 = "${state.mostActiveBuyCount} trades"
-        ),
-        "Selling Time" to AnnotatedText(
-            text = "The most active selling time was: ",
-            highlighted = state.mostActiveSellTime,
-            suffix = ", with ",
-            highlighted2 = "${state.mostActiveSellCount} trades"
+        listOf( // chart 4
+            "Buying Time" to AnnotatedText(
+                text = "The most active buying time was: ",
+                highlighted = state.mostActiveBuyTime,
+                suffix = ", with ",
+                highlighted2 = "${state.mostActiveBuyCount} trades"
+            ),
+            "Selling Time" to AnnotatedText(
+                text = "The most active selling time was: ",
+                highlighted = state.mostActiveSellTime,
+                suffix = ", with ",
+                highlighted2 = "${state.mostActiveSellCount} trades"
+            )
         )
     )
 
-    val cardsGroup1 = listOf(
-        "Daily Volume Trend" to ChartType.Line(
-            state.dailyVolumeTrend
+    val chartGroup2 = listOf(
+        "Weekly Profit Analysis" to ChartType.Column(
+            data = state.clearings.associate { it.symbol to it.netProfit },
+            label = "Net Profit"
         ),
-        "User Active Periods" to ChartType.Row(
-            state.userActivePeriods
+        "Profit Ratio Analysis" to ChartType.Column(
+            data = state.clearings.associate { it.symbol to it.profitPercentage },
+            label = "Profit %"
         ),
-        "Transaction Amount Distribution" to ChartType.Column(
-            state.transactionAmountDistribution
+        "Weekly Transaction Trend" to ChartType.Line(
+            data = state.weeklyTransactionAnalysis.mapValues { (_, value) ->
+                value.first + value.second
+            },
+            lineLabel = "Dollars"
         )
     )
 
     val analysisGroup2 = listOf(
-        "Selling Time" to AnnotatedText(
-            text = "The most active selling time was: ",
-            highlighted = state.mostActiveSellTime,
-            suffix = ", with ",
-            highlighted2 = "${state.mostActiveSellCount} trades"
+        listOf(
+            "Highest Profit" to AnnotatedText(
+                text = "The stock with the highest profit last week: ",
+                highlighted = "${state.clearings.maxByOrNull { it.netProfit }?.symbol}",
+                suffix = " with net profit of ",
+                highlighted2 = "\$${state.clearings.maxByOrNull { it.netProfit }?.netProfit}"
+            ),
+            "Lowest Profit" to AnnotatedText(
+                text = "The stock with the lowest profit last week: ",
+                highlighted = "${state.clearings.minByOrNull { it.netProfit }?.symbol}",
+                suffix = " with net profit of ",
+                highlighted2 = "\$${state.clearings.minByOrNull { it.netProfit }?.netProfit}"
+            )
+        ),
+        listOf(
+            "Highest Profit Ratio" to AnnotatedText(
+                text = "The stock with the highest profit ratio last week: ",
+                highlighted = "${state.clearings.maxByOrNull { it.profitPercentage }?.symbol}",
+                suffix = " with profit ratio of ",
+                highlighted2 = "${state.clearings.maxByOrNull { it.profitPercentage }?.profitPercentage}%"
+            ),
+            "Lowest Profit Ratio" to AnnotatedText(
+                text = "The stock with the lowest profit ratio last week: ",
+                highlighted = "${state.clearings.minByOrNull { it.profitPercentage }?.symbol}",
+                suffix = " with profit ratio of ",
+                highlighted2 = "${state.clearings.minByOrNull { it.profitPercentage }?.profitPercentage}%"
+            )
+        ),
+        listOf(
+            "Transaction Trend" to AnnotatedText(
+                text = "Last week, total transaction is: $",
+                highlighted = "${state.weeklyTransactionAnalysis.entries.maxByOrNull { it.key }?.value?.let { it.first + it.second } ?: 0.0}",
+                suffix = " It changed by ",
+                highlighted2 = "${state.weeklyTransactionChange}%"
+            )
         )
     )
 
-    val cardsGroup2 = listOf(
-
-
-        "User Category Preferences" to ChartType.Column(
-            state.userCategoryPreferences
-        ),
-
-        "Monthly Transaction Analysis" to ChartType.Column(
-            state.monthlyTransactionAnalysis
-        ),
-
-        "Profit Loss Distribution" to ChartType.Column(
-            state.profitLossDistribution
-        )
-    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF121212))
     ) {
-        // 顶部显示APP名称
+        // Display App name
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF1E88E5)) // 蓝色背景
-                .padding(16.dp),
+                .padding(12.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "StockEasy",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 28.sp,
+                style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+                    fontFamily = FontFamily.Serif,
+                    fontStyle = FontStyle.Italic,
+                    letterSpacing = 1.2.sp
+                ),
+//                modifier = Modifier.weight(),
+                textAlign = TextAlign.Center
             )
         }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
+            // Trading Analysis
             item {
-                // 上半部分卡片组及分析
-                AnalysisAndCardGroup(
-                    title = "Volume & Transaction Analysis",
+                // Analysis Group1
+                AnalysisAndChartGroup(
+                    title = "Trading Analysis",
                     analysisContent = analysisGroup1,
-                    cards = cardsGroup1
+                    cards = chartGroup1
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
+            // Profit Analysis
             item {
 
-                // 下半部分卡片组及分析
-                AnalysisAndCardGroup(
-                    title = "User Behavior & Profit Analysis",
+                // Analysis Group2
+                AnalysisAndChartGroup(
+                    title = "Profit Analysis",
                     analysisContent = analysisGroup2,
-                    cards = cardsGroup2
+                    cards = chartGroup2
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -242,7 +281,7 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
             // add additional space to avoid overlay
             item {
-                Spacer(modifier = Modifier.height(56.dp)) // 56dp 是典型导航栏高度，可以调整为您的实际高度
+                Spacer(modifier = Modifier.height(56.dp))
             }
         }
 
@@ -251,7 +290,12 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
 
 @Composable
-fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, AnnotatedText>>, cards: List<Pair<String, ChartType>>) {
+fun AnalysisAndChartGroup(title: String,
+                         analysisContent: List<List<Pair<String, AnnotatedText>>>,
+                         cards: List<Pair<String, ChartType>>
+                         ) {
+    var currentIndex by remember { mutableStateOf(0) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -277,11 +321,13 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
         }
 
         // 卡片组件
-        SwipableCardComponent(cards = cards)
+        SwipableCardComponent(cards = cards, onCardIndexChange =  { newIndex ->
+            currentIndex = newIndex
+        })
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        analysisContent.forEach { (header, content) ->
+        analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
             Column(
                 modifier = Modifier.padding(vertical = 8.dp)
             ) {
@@ -304,7 +350,7 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
                         }
                         content.suffix?.let { append(it) }
                         content.highlighted2?.let {
-                            withStyle(style = SpanStyle(color = if (it.contains("%") && it.startsWith("-")) Color.Red else Color.Green)) {
+                            withStyle(style = SpanStyle(color = if (it.startsWith("-")) Color.Red else Color.Green)) {
                                 append(it)
                             }
                         }
@@ -331,7 +377,8 @@ fun AnalysisAndCardGroup(title: String, analysisContent: List<Pair<String, Annot
 
 
 @Composable
-fun SwipableCardComponent(cards: List<Pair<String, ChartType>>) {
+fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
+                          onCardIndexChange: (Int) -> Unit) {
     var currentIndex by remember { mutableStateOf(0) }
     var dragOffset by remember { mutableStateOf(0f) }
     val animatedOffset by animateFloatAsState(targetValue = dragOffset)
@@ -345,7 +392,7 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(300.dp) // the Height of the card
                 .shadow(15.dp, RoundedCornerShape(25.dp))
                 .offset(x = animatedOffset.dp)
                 .pointerInput(Unit) {
@@ -358,10 +405,12 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>) {
                             if (dragOffset > 200) {
                                 dragOffset = -300f // Move card off-screen to the right
                                 currentIndex = (currentIndex - 1 + cards.size) % cards.size
+                                onCardIndexChange(currentIndex)
 
                             } else if (dragOffset < -200) {
                                 dragOffset = 300f  // Move card off-screen to the left
                                 currentIndex = (currentIndex + 1) % cards.size
+                                onCardIndexChange(currentIndex)
                             }
                             dragOffset = 0f
                         },
@@ -399,7 +448,9 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>) {
                 )
 
                 // Display the chart for the current card
-                cards[currentIndex].second.Display()
+                Box(modifier = Modifier.padding(bottom = 16.dp)){
+                    cards[currentIndex].second.Display()
+                }
             }
         }
     }
@@ -407,23 +458,33 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>) {
 
 
 @Composable
-fun LineChartContent(data: Map<String, Double>) {
+fun LineChartContent(data: Map<String, Double>, lineLabel: String) {
     val chartData = data.entries
-        .sortedBy { it.key } // 按键（例如日期）排序
-        .map { it.key to it.value } // 转换为 List<Pair<String, Double>> 格式
+        .sortedBy { it.key } // Sort the data
+        .map { it.key to it.value } // Change the format to List<Pair<String, Double>>
+
+    val maxLabels = 5 // Because limited space, we only display 5 labels
+    val sampledLabels = remember(chartData) {
+        if (chartData.size <= maxLabels) {
+            chartData.map { it.first } // if max number of labels is less than 5, we use all of them
+        } else {
+            val step = (chartData.size - 1) / (maxLabels - 1).toFloat()
+            (0 until maxLabels).map { index -> chartData[(index * step).toInt()].first }
+        }
+    }
 
     chartData.map { it.second }.maxOrNull()?.let { maxValue ->
         LineChart(
             data = remember {
                 listOf(
                     Line(
-                        label = "Line Data",
-                        values = chartData.map { it.second }, // 提取数值部分
+                        label = lineLabel,
+                        values = chartData.map { it.second }, // only need the values
                         color = Brush.horizontalGradient(
                             colors = listOf(
 
-                                Color(0xFFDE942A), // 橙色
-                                Color(0xFFB94621)  // 深橙色
+                                Color(0xFFDE942A),
+                                Color(0xFFB94621)
                             ),
                             startX = 0f,
                             endX = 1000f
@@ -444,7 +505,26 @@ fun LineChartContent(data: Map<String, Double>) {
             maxValue = maxValue + 100,
             animationMode = AnimationMode.Together(delayBuilder = {
                 it * 500L
-            })
+            }),
+            labelProperties = LabelProperties(
+                enabled = true,
+                labels = sampledLabels,
+                textStyle = TextStyle.Default.copy(
+                    color = Color.White,
+                    fontSize = 12.sp
+                ),
+                padding = 5.dp, // Between Chart and label
+                rotation = LabelProperties.Rotation(
+                    mode = LabelProperties.Rotation.Mode.Force,
+                    degree = -35f
+                )
+            ),
+            indicatorProperties = HorizontalIndicatorProperties(
+                textStyle = TextStyle.Default.copy(
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+            )
 
         )
     }
@@ -452,18 +532,18 @@ fun LineChartContent(data: Map<String, Double>) {
 
 
 @Composable
-fun ColumnChartContent(data: Map<String, Double>) {
+fun ColumnChartContent(data: Map<String, Double>, label: String) {
     val chartData = data.entries
-        .sortedBy { it.key } // 按键（例如日期）排序
-        .map { it.key to it.value } // 转换为 List<Pair<String, Double>> 格式
+        .sortedBy { it.key }
+        .map { it.key to it.value }
 
     chartData.map { it.second }.maxOrNull()?.let { maxValue ->
         ColumnChart(
             data = remember {
                 chartData.map {
                     Bars(
-                        label = it.first,
-                        values = listOf(Bars.Data(label = "Value", value = it.second, color = Brush.horizontalGradient(
+                        label = if (it.first.length > 10) it.first.take(8) + "..." else it.first,
+                        values = listOf(Bars.Data(label = label, value = it.second, color = Brush.horizontalGradient(
                             colors = listOf(
                                 Color(0xFF3AB3E8), // 浅蓝色
                                 Color(0xFFFFA726), // 橙色
@@ -486,6 +566,24 @@ fun ColumnChartContent(data: Map<String, Double>) {
                 dampingRatio = Spring.DampingRatioMediumBouncy,
                 stiffness = Spring.StiffnessLow
             ),
+            labelProperties = LabelProperties(
+                enabled = true,
+                textStyle = TextStyle.Default.copy(
+                    color = Color.White,
+                    fontSize = 10.sp
+                ),
+                padding = 5.dp, // Between Chart and label
+                rotation = LabelProperties.Rotation(
+                    mode = LabelProperties.Rotation.Mode.Force,
+                    degree = -35f
+                )
+            ),
+            indicatorProperties = HorizontalIndicatorProperties(
+                textStyle = TextStyle.Default.copy(
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+            )
 
         )
     }
@@ -494,7 +592,7 @@ fun ColumnChartContent(data: Map<String, Double>) {
 
 
 @Composable
-fun RowChartContent(data: Map<String, Double>) {
+fun RowChartContent(data: Map<String, Double>, label: String) {
     data.entries.map { it.value }.maxOrNull()?.let { maxValue ->
         RowChart(
             data = remember {
@@ -502,7 +600,7 @@ fun RowChartContent(data: Map<String, Double>) {
                     Bars(
                         label = entry.key,
                         values = listOf(
-                            Bars.Data(value = entry.value, color = Brush.horizontalGradient(
+                            Bars.Data(label = label, value = entry.value, color = Brush.horizontalGradient(
                                 colors = listOf(
                                     Color(0xFF3AB3E8), // 浅蓝色
                                     Color(0xFFFFA726), // 橙色
@@ -527,6 +625,24 @@ fun RowChartContent(data: Map<String, Double>) {
                 dampingRatio = Spring.DampingRatioMediumBouncy,
                 stiffness = Spring.StiffnessLow
             ),
+            labelProperties = LabelProperties(
+                enabled = true,
+                textStyle = TextStyle.Default.copy(
+                    color = Color.White,
+                    fontSize = 12.sp
+                ),
+                padding = 5.dp, // Between Chart and label
+                rotation = LabelProperties.Rotation(
+                    mode = LabelProperties.Rotation.Mode.Force,
+                    degree = -35f
+                )
+            ),
+            indicatorProperties = VerticalIndicatorProperties(
+                textStyle = TextStyle.Default.copy(
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+            )
         )
     }
 }

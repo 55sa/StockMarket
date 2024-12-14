@@ -6,6 +6,7 @@ import android.util.Log
 import java.time.format.DateTimeFormatter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -58,7 +59,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
                 // Update Last Week's data first
                 // TODO: remove the referenceDate when deploying
-                val lastWeekData = filterLastWeekData(referenceDate)
+                val lastWeekData = filterWeekData(referenceDate)
                 val weekBeforeLastData = filterWeekBeforeLastData(referenceDate)
                 _state.emit(
                     _state.value.copy(
@@ -66,7 +67,6 @@ class TradingAnalysisViewModel  @Inject constructor(
                         weekBeforeLastData = weekBeforeLastData
                         )
                 )
-                Log.d("loadTradingDataFromFile", "lastWeekData: ${_state.value.lastWeekData}")
 
                 updateTradingAnalysisState()
             } catch (e: Exception) {
@@ -84,6 +84,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     private fun updateTradingAnalysisState() {
         viewModelScope.launch {
+            val (clearing, holdings) = calculateClearingInfo()
             _state.emit(
                 _state.value.copy(
                     // V 1.0
@@ -91,8 +92,7 @@ class TradingAnalysisViewModel  @Inject constructor(
                     transactionAmountDistribution = calculateTransactionAmountDistribution(),
                     userActivePeriods = calculateUserActivePeriods(),
                     userCategoryPreferences = calculateUserCategoryPreferences(),
-                    monthlyTransactionAnalysis = calculateMonthlyTransactionAnalysis(),
-                    profitLossDistribution = calculateProfitLossDistribution(),
+                    weeklyTransactionAnalysis = calculateWeeklyTransactionAnalysis(referenceDate), // TODO: Remove referenceData when Deploying
 
                     // V 2.0
 
@@ -109,26 +109,27 @@ class TradingAnalysisViewModel  @Inject constructor(
                     mostActiveBuyTime = calculateMostActiveBuyTime(),
                     mostActiveBuyCount = calculateMostActiveBuyCount(),
                     mostActiveSellTime = calculateMostActiveSellTime(),
-                    mostActiveSellCount = calculateMostActiveSellCount()
+                    mostActiveSellCount = calculateMostActiveSellCount(),
+                    weeklyTransactionChange = calculateWeeklyChange(calculateWeeklyTransactionAnalysis(referenceDate)),
 
 
-
+                    clearings = clearing,
+                    holdings = holdings
                 )
             )
         }
-        Log.d("updateTradingAnalysisState", "lastWeekData: ${_state.value.lastWeekData}")
     }
 
 
     // Add methods for processing tradingData and returning chart data
     private fun calculateDailyVolumeTrend(): Map<String, Double> {
-//        Log.d("testing", "_state.value.tradingData: ${_state.value.tradingData}")
         val dailyVT = _state.value.tradingData.groupBy { it.createdAt.substring(0, 10) } // Group by date
             .mapValues { (_, entries) ->
                 entries.sumOf { it.filledAssetQuantity }
             }
-//        Log.d("testing", "calculateDailyVolumeTrend: ${dailyVT.size}")
-        return dailyVT
+        return dailyVT.mapKeys {
+            it.key.substring(5, 10)
+        }
     }
 
     private fun calculateTransactionAmountDistribution(): Map<String, Double> {
@@ -161,13 +162,13 @@ class TradingAnalysisViewModel  @Inject constructor(
                 }
             }
             .mapValues { (_, entries) ->
-                entries.sumOf { it.filledAssetQuantity } // 对分组内的 filledAssetQuantity 求和
+                entries.sumOf { it.filledAssetQuantity }
             }
             .toSortedMap(compareBy {
                 when (it) {
                     "Pre-Market" -> 0
                     "Post-Market" -> Int.MAX_VALUE
-                    else -> it.substringBefore(":").toInt() // 按小时排序
+                    else -> it.substringBefore(":").toInt() // Sort by Hours
                 }
             })
     }
@@ -176,7 +177,7 @@ class TradingAnalysisViewModel  @Inject constructor(
     private fun calculateUserCategoryPreferences(): Map<String, Double> {
         val nasdaqIndustryMap = _state.value.nasdaqCompanyData.associateBy { it.symbol }
 
-        return _state.value.tradingData.groupBy { it.symbol }
+        return _state.value.lastWeekData.groupBy { it.symbol }
             .mapNotNull { (symbol, entries) ->
                 val industry = nasdaqIndustryMap[symbol]?.industry ?: return@mapNotNull null
                 industry to entries.size.toDouble()
@@ -185,20 +186,43 @@ class TradingAnalysisViewModel  @Inject constructor(
             .mapValues { (_, sizes) -> sizes.sum() }
     }
 
-    private fun calculateMonthlyTransactionAnalysis(): Map<String, Double> {
-        return _state.value.tradingData.groupBy { it.createdAt.substring(0, 7) } // Group by year-month
-            .mapValues { (_, entries) -> entries.size.toDouble()  }
+    private fun calculateWeeklyTransactionAnalysis(referenceDate: java.time.LocalDate = java.time.LocalDate.now()): Map<String, Pair<Double,Double>> {
+        val recentWeeklyData = (0 until 4).associate { weeksAgo ->
+            val weekData = filterWeekData(referenceDate, weeksAgo).filter{it.state != OrderState.CANCELLED}
+            val weekStartDate = getWeekRange(referenceDate, weeksAgo).first.toString()
+
+            val totalBuy = weekData.filter { it.side == TradeSide.BUY }
+                .sumOf { it.filledAssetQuantity * it.averagePrice }
+
+            val totalSell = weekData.filter { it.side == TradeSide.SELL }
+                .sumOf { it.filledAssetQuantity * it.averagePrice }
+
+            weekStartDate.takeLast(5) to (totalBuy to totalSell)
+        }
+        Log.d("calculateWeeklyTransactionAnalysis", "calculateWeeklyTransactionAnalysis: $recentWeeklyData")
+        return recentWeeklyData
     }
 
-    private fun calculateProfitLossDistribution(): Map<String, Double> {
-        return _state.value.tradingData.groupBy { it.side }
-            .mapKeys { (side, _) -> side.toString() }
-            .mapValues { (_, entries) ->
-                entries.sumOf { entry ->
-                    val profitLoss = entry.averagePrice * entry.filledAssetQuantity
-                    if (entry.side == TradeSide.BUY) -profitLoss else profitLoss
-                }
-            }
+    @SuppressLint("DefaultLocale")
+    private fun calculateWeeklyChange(weeklyTransactionAnalysis: Map<String, Pair<Double, Double>>): Double {
+        val currentYear = java.time.LocalDate.now().year
+
+        val sortedEntries = weeklyTransactionAnalysis.entries
+            .sortedByDescending { java.time.LocalDate.parse("$currentYear-${it.key}") } // 动态生成完整日期
+            .take(2)
+
+        if (sortedEntries.size < 2) {
+            return 0.0
+        }
+
+        val thisWeek = sortedEntries[0].value.let { it.first + it.second }
+        val lastWeek = sortedEntries[1].value.let { it.first + it.second }
+
+        return if (lastWeek > 0) {
+            ((thisWeek - lastWeek) / lastWeek * 100).let { String.format("%.2f", it).toDouble() }
+        } else {
+            0.0
+        }
     }
 
     // V 2.0
@@ -212,18 +236,13 @@ class TradingAnalysisViewModel  @Inject constructor(
         return Pair(startOfWeek, endOfWeek)
     }
 
-    private fun filterLastWeekData(referenceDate: java.time.LocalDate = java.time.LocalDate.now()): List<TradingDataEntry> {
+    private fun filterWeekData(referenceDate: java.time.LocalDate = java.time.LocalDate.now(), weeksAgo:Int = 1): List<TradingDataEntry> {
         // Helper function to get the data for that specific week
-        val (startOfLastWeek, endOfLastWeek) = getWeekRange(referenceDate, weeksAgo = 1)
+        val (startOfLastWeek, endOfLastWeek) = getWeekRange(referenceDate, weeksAgo = weeksAgo)
         val lastWeekData = _state.value.tradingData.filter {
             val date = java.time.LocalDate.parse(it.createdAt.substring(0, 10))
-//            Log.d("filterLastWeekData", "date: ${it.createdAt.substring(0, 10)}")
-//            if (date in startOfLastWeek..endOfLastWeek){
-//                Log.d("filterLastWeekData", "in lastweek?: True")
-//            }
             date in startOfLastWeek..endOfLastWeek
         }
-        Log.d("filterLastWeekData", "date: ${lastWeekData}")
         return lastWeekData
     }
 
@@ -273,12 +292,12 @@ class TradingAnalysisViewModel  @Inject constructor(
         return _state.value.lastWeekData.map { it.symbol }.distinct().size
     }
 
-    // 当前持仓的股票数量
+    // 上周新增持仓的股票数量
     private fun calculateStocksCurrentlyHeld(): Int {
-        return _state.value.tradingData.filter { it.state != OrderState.CLOSED }.map { it.symbol }.distinct().size
+        return _state.value.lastWeekData.filter { it.state != OrderState.CLOSED }.map { it.symbol }.distinct().size
     }
 
-    // 已清仓的股票数量
+    // 已清仓的股票数量 : TODO: 逻辑有问题
     private fun calculateStocksCleared(): Int {
         val totalStocks = _state.value.tradingData.map { it.symbol }.distinct().size
         val heldStocks = _state.value.tradingData.filter { it.state != OrderState.CLOSED }.map { it.symbol }.distinct().size
@@ -287,20 +306,20 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     // 交易次数最多的股票
     private fun calculateMostTradedStock(): String {
-        return _state.value.tradingData.groupingBy { it.symbol }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
+        return _state.value.lastWeekData.groupingBy { it.symbol }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
     }
 
     // 最活跃的行业
     private fun calculateMostActiveSector(): String {
         val nasdaqIndustryMap = _state.value.nasdaqCompanyData.associateBy { it.symbol }
-        return _state.value.tradingData.mapNotNull { entry ->
+        return _state.value.lastWeekData.mapNotNull { entry ->
             nasdaqIndustryMap[entry.symbol]?.industry
         }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key.orEmpty()
     }
 
     // 最活跃的买入时间段
     private fun calculateMostActiveBuyTime(): String {
-        return _state.value.tradingData.filter { it.side == TradeSide.BUY }
+        return _state.value.lastWeekData.filter { it.side == TradeSide.BUY }
             .groupBy { it.createdAt.substring(11, 13) } // 按小时分组
             .maxByOrNull { (_, entries) -> entries.size }
             ?.key?.let { "$it:00-$it:59" }.orEmpty()
@@ -308,7 +327,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     // 最活跃的买入交易数量
     private fun calculateMostActiveBuyCount(): Int {
-        val buyTimes = _state.value.tradingData.filter { it.side == TradeSide.BUY }
+        val buyTimes = _state.value.lastWeekData.filter { it.side == TradeSide.BUY }
             .groupingBy { it.createdAt.substring(11, 13) } // 按小时分组
             .eachCount()
         val mostActiveTime = buyTimes.maxByOrNull { it.value }?.key
@@ -317,7 +336,7 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     // 最活跃的卖出时间段
     private fun calculateMostActiveSellTime(): String {
-        return _state.value.tradingData.filter { it.side == TradeSide.SELL }
+        return _state.value.lastWeekData.filter { it.side == TradeSide.SELL }
             .groupBy { it.createdAt.substring(11, 13) } // 按小时分组
             .maxByOrNull { (_, entries) -> entries.size }
             ?.key?.let { "$it:00-$it:59" }.orEmpty()
@@ -325,24 +344,127 @@ class TradingAnalysisViewModel  @Inject constructor(
 
     // 最活跃的卖出交易数量
     private fun calculateMostActiveSellCount(): Int {
-        val sellTimes = _state.value.tradingData.filter { it.side == TradeSide.SELL }
+        val sellTimes = _state.value.lastWeekData.filter { it.side == TradeSide.SELL }
             .groupingBy { it.createdAt.substring(11, 13) } // 按小时分组
             .eachCount()
         val mostActiveTime = sellTimes.maxByOrNull { it.value }?.key
         return sellTimes[mostActiveTime] ?: 0
     }
 
-//    // 获取上周交易数据
-//    private fun getLastWeekData(): List<TradingDataEntry> {
-//        return _state.value.tradingData.filter { it.createdAt.substring(0, 10) in getLastWeekRange() }
-//    }
-//
-//    // 获取上周时间范围
-//    private fun getLastWeekRange(): List<String> {
-//        val now = java.time.LocalDate.now()
-//        val lastWeekDates = (1..7).map { now.minusDays(it.toLong()).toString() }
-//        return lastWeekDates
-//    }
+    @SuppressLint("DefaultLocale")
+    private fun calculateClearingInfo(): Pair<List<ClearingInfo>, Map<String, Pair<Double, Double>>> {
+        // return type: Pair<List<ClearingInfo>, Map<String,Pair<Double, Double>>>
+//        var clearings: List<ClearingInfo> = emptyList()
+        val clearings = mutableListOf<ClearingInfo>()
+        val holdings = mutableMapOf<String, Pair<Double, Double>>()
 
+        val groupedAndSortedTradingData = _state.value.lastWeekData
+            .filter { it.state != OrderState.CANCELLED }
+            .groupBy { it.symbol }
+            .mapValues { (_, entries) ->
+                entries.sortedBy { it.createdAt }
+            }
+
+        for ((symbol, stockTradingData) in groupedAndSortedTradingData) {
+            var currentHoldings = 0.0 // 当前持有的股票数量
+            var holdingCost = 0.0 // 当前持有的总成本
+            var lastClearingTrades = mutableListOf<TradingDataEntry>() // 记录上次清仓后的交易
+            var earliestBuyPrice = 0.0 // 本周最早买入价格
+            var isFirstBuyFound = false // 标记是否找到本周的第一笔买入价格
+            var successCount = 0
+            var failureCount = 0
+
+            var netProfit = 0.0
+            var totalBuyCost = 0.0
+            var profitPercentage = 0.0
+
+            for (trade in stockTradingData) {
+                Log.d("calculateClearingInfo", "trade: $trade")
+
+                if (trade.side == TradeSide.BUY) {
+                    // 更新当前持仓和成本
+                    currentHoldings += trade.filledAssetQuantity
+                    holdingCost += trade.filledAssetQuantity * trade.averagePrice
+                    lastClearingTrades.add(trade)
+
+                    // 更新本周最早买入价格
+                    if (!isFirstBuyFound) {
+                        earliestBuyPrice = trade.averagePrice
+                        isFirstBuyFound = true
+                    }
+                } else if (trade.side == TradeSide.SELL) {
+                    // 计算卖出产生的收益
+                    var sellQuantity = trade.filledAssetQuantity
+                    val sellRevenue = sellQuantity * trade.averagePrice
+                    var tempBuyCost = 0.0
+
+                    while (sellQuantity > 0) {
+                        if (lastClearingTrades.isEmpty() || currentHoldings <= 0) {
+                            // 如果列表为空，停止处理，防止异常
+                            currentHoldings -= sellQuantity
+                            sellQuantity -= sellQuantity
+                            break
+                        }
+
+                        val buyTrade = lastClearingTrades.removeAt(0)
+                        val quantityToMatch = minOf(buyTrade.filledAssetQuantity, sellQuantity)
+
+                        tempBuyCost += quantityToMatch * buyTrade.averagePrice
+                        currentHoldings -= quantityToMatch
+                        sellQuantity -= quantityToMatch
+                        holdingCost -= quantityToMatch * buyTrade.averagePrice
+
+                        if (quantityToMatch < buyTrade.filledAssetQuantity) {
+                            lastClearingTrades.add(
+                                0,
+                                buyTrade.copy(filledAssetQuantity = buyTrade.filledAssetQuantity - quantityToMatch)
+                            )
+                        }
+                        Log.d("currentHoldings", "currentHoldings, sellQuantity: $currentHoldings, $sellQuantity")
+                    }
+                    Log.d("currentHoldings", "currentHoldings, sellQuantity resolved: $currentHoldings, $sellQuantity")
+                    if (currentHoldings < 0 && earliestBuyPrice != 0.0){
+                        totalBuyCost -= currentHoldings *  earliestBuyPrice
+                        currentHoldings = 0.0
+                    } else {
+                        // The calculation here is estimated not real. Future Fix Needed.
+                        // Not adding more for now
+                    }
+                    // 计算清仓收益
+                    val newProfitGain = sellRevenue - tempBuyCost
+
+                    // Accumulate all costs
+                    totalBuyCost += tempBuyCost
+
+                    if (newProfitGain >0){successCount += 1} else failureCount += 1
+
+                    netProfit += newProfitGain
+
+                }
+
+            }
+            Log.d("calculateClearingInfo", "___entries end___")
+            profitPercentage = netProfit / totalBuyCost
+
+            clearings.add(
+                ClearingInfo(
+                    symbol = symbol,
+                    netProfit = String.format("%.2f", netProfit).toDouble(),
+                    profitPercentage = String.format("%.2f", profitPercentage).toDouble(),
+                    successCount = successCount,
+                    failureCount = failureCount
+                )
+            )
+            if (currentHoldings > 0) {
+                val averageCost = holdingCost / currentHoldings
+                holdings[symbol] = Pair(averageCost, currentHoldings) // 记录平均成本和数量
+            }
+            Log.d("calculateClearingInfo", "clearings: $clearings")
+        }
+
+//        Log.d("clearings", "calculateClearingInfo: $clearings")
+//        return Pair(clearings, holdings)
+        return Pair(clearings, holdings)
+    }
 
 }

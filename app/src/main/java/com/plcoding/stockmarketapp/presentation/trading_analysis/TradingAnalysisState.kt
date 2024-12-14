@@ -7,22 +7,12 @@ data class TradingAnalysisState (
     var tradingData: List<TradingDataEntry>  = emptyList(),
     var nasdaqCompanyData: List<NasdaqCompanyScreener> = emptyList(),
 
-
-    val showDailyVolumeTrend: Boolean = true,
-    val showTransactionAmountDistribution: Boolean = false,
-    val showUserActivePeriods: Boolean = false,
-    val showUserCategoryPreferences: Boolean = false,
-    val showMonthlyTransactionAnalysis: Boolean = false,
-    val showProfitLossDistribution: Boolean = false,
-
-
     // for charts V 1.0
     val dailyVolumeTrend: Map<String, Double> = emptyMap(),
     val transactionAmountDistribution: Map<String, Double> = emptyMap(),
     val userActivePeriods: Map<String, Double> = emptyMap(),
     val userCategoryPreferences: Map<String, Double> = emptyMap(),
-    val monthlyTransactionAnalysis: Map<String, Double> = emptyMap(),
-    val profitLossDistribution: Map<String, Double> = emptyMap(),
+    val weeklyTransactionAnalysis:  Map<String, Pair<Double,Double>> = emptyMap(),
 
 
     // V 2.0
@@ -44,9 +34,21 @@ data class TradingAnalysisState (
     val mostActiveBuyTime: String = "",
     val mostActiveBuyCount: Int = 0,
     val mostActiveSellTime: String = "",
-    val mostActiveSellCount: Int = 0
+    val mostActiveSellCount: Int = 0,
+    val weeklyTransactionChange: Double = 0.0,
+
+    val companyPreferences: Map<String, Double> = emptyMap(),
 
     // for Profit Analysis
 
+    var clearings: List<ClearingInfo> = emptyList(),
+    var holdings: Map<String,Pair<Double, Double>> = emptyMap()
+)
 
+data class ClearingInfo(
+    val symbol: String,
+    val netProfit: Double,
+    val profitPercentage: Double,
+    val successCount: Int,
+    val failureCount: Int
 )
