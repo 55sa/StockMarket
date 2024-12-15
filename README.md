@@ -46,4 +46,24 @@ More Info:
 https://openai.com/index/openai-api/
 
 
+## ScreenShot
+![MainScreen](ScreenShot/MainScreen.png)
+
+![Search](ScreenShot/Search.png)
+
+![Company1](ScreenShot/Company1.png)
+
+![Company2](ScreenShot/Company2.png)
+
+![Analysis1](ScreenShot/analysis1.png)
+
+![Analysis2](ScreenShot/analysis2.png)
+
+![Analysis3](ScreenShot/analysis3.png)
+
+![Login1](ScreenShot/login1.png)
+
+![Login2](ScreenShot/login2.png)
+
+
 
