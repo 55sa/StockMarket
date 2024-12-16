@@ -26,6 +26,7 @@ import ir.ehsannarmani.compose_charts.models.*
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -39,17 +40,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.platform.LocalConfiguration
 
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.times
 
 sealed class ChartType {
@@ -81,6 +86,8 @@ data class AnnotatedText(
 fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
     val state = viewModel.state.collectAsState().value
+
+    val isLargeScreen = LocalConfiguration.current.screenWidthDp > 600
 
     // V 2.0
 
@@ -272,25 +279,28 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
             .background(Color(0xFF121212))
     ) {
         // Display App name
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF1E88E5)) // 蓝色背景
-                .padding(12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "StockEasy",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif,
-                    fontStyle = FontStyle.Italic,
-                    letterSpacing = 1.2.sp
-                ),
+        if (!isLargeScreen){
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1E88E5)) // 蓝色背景
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "StockEasy",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
+                        fontStyle = FontStyle.Italic,
+                        letterSpacing = 1.2.sp
+                    ),
 //                modifier = Modifier.weight(),
-                textAlign = TextAlign.Center
-            )
+                    textAlign = TextAlign.Center
+                )
+            }
         }
+
 
         LazyColumn(
             modifier = Modifier.fillMaxSize()
@@ -302,7 +312,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                     title = "Trading Analysis",
                     analysisContent = analysisGroup1,
                     cards = chartGroup1,
-                    toggleIndices = toggleIndices1
+                    toggleIndices = toggleIndices1,
+                    isLargeScreen = isLargeScreen
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -316,7 +327,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                     title = "Profit Analysis",
                     analysisContent = analysisGroup2,
                     cards = chartGroup2,
-                    toggleIndices = toggleIndices2
+                    toggleIndices = toggleIndices2,
+                    isLargeScreen = isLargeScreen
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -331,13 +343,14 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     }
 }
 
-
 @Composable
-fun AnalysisAndChartGroup(title: String,
-                         analysisContent: List<List<Pair<String, AnnotatedText>>>,
-                         cards: List<Pair<String, ChartType>>,
-                         toggleIndices: List<Int>
-                         ) {
+fun AnalysisAndChartGroup(
+    title: String,
+    analysisContent: List<List<Pair<String, AnnotatedText>>>,
+    cards: List<Pair<String, ChartType>>,
+    toggleIndices: List<Int>,
+    isLargeScreen: Boolean // 新增参数，用于判断屏幕是否较大
+) {
     var currentIndex by remember { mutableStateOf(0) }
 
     Column(
@@ -347,77 +360,185 @@ fun AnalysisAndChartGroup(title: String,
             .shadow(8.dp, RoundedCornerShape(16.dp))
             .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
     ) {
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            contentAlignment = Alignment.Center // set to center
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = title,
                 style = TextStyle(
-                    color = Color(0xFF1E88E5),
+                    color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
         }
 
-        // 卡片组件
-        SwipableCardComponent(
-            cards = cards,
-            onCardIndexChange =  { newIndex ->
-            currentIndex = newIndex },
-            toggleIndices
+        // 添加下方的分割线
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            thickness = 1.dp,
+            color = Color.Gray.copy(alpha = 0.5f) // 分割线颜色
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
-            Column(
-                modifier = Modifier.padding(vertical = 8.dp)
+        if (isLargeScreen) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = header,
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.padding(bottom = 4.dp).padding(horizontal = 6.dp)
-                )
-                Column(
-                    modifier = Modifier.padding(horizontal = 6.dp).fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(300.dp)
                 ) {
-                    val annotatedText = buildAnnotatedString {
-                        append(content.text)
-                        withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
-                            append(content.highlighted)
-                        }
-                        content.suffix?.let { append(it) }
-                        content.highlighted2?.let {
-                            withStyle(style = SpanStyle(color = if (it.startsWith("-")) Color.Red else Color.Green)) {
-                                append(it)
-                            }
-                        }
-                        content.suffix2?.let { append(it) }
-                        content.highlighted3?.let {
-                            withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
-                                append(it)
+                    SwipableCardComponent(
+                        cards = cards,
+                        onCardIndexChange = { newIndex ->
+                            currentIndex = newIndex
+                        },
+                        toggleIndices = toggleIndices,
+                        cardHeight = 400.dp
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 16.dp)
+                ) {
+
+                    analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp, horizontal = 8.dp)
+                                .shadow(4.dp, RoundedCornerShape(12.dp)) // 添加阴影和圆角
+                                .background(Color(0xFF2A2A3A), shape = RoundedCornerShape(12.dp)) // 设置背景颜色和圆角
+                                .padding(16.dp) // 内部内容的间距
+                        ) {
+                            Column {
+                                // 标题
+                                Text(
+                                    text = header,
+                                    style = TextStyle(
+                                        color = Color.White,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                // 内容
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append(content.text)
+                                        withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                            append(content.highlighted)
+                                        }
+                                        content.suffix?.let { append(it) }
+                                        content.highlighted2?.let {
+                                            withStyle(style = SpanStyle(color = if (it.startsWith("-")) Color.Red else Color.Green)) {
+                                                append(it)
+                                            }
+                                        }
+                                        content.suffix2?.let { append(it) }
+                                        content.highlighted3?.let {
+                                            withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                                append(it)
+                                            }
+                                        }
+                                    },
+                                    style = TextStyle(
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 16.sp
+                                    )
+                                )
                             }
                         }
                     }
-                    Text(
-                        text = annotatedText,
-                        style = TextStyle(
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 16.sp
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        cards.forEachIndexed { index, _ ->
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .padding(horizontal = 4.dp)
+                                    .background(
+                                        color = if (index == currentIndex) Color(0xFF1E88E5) else Color.Gray,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                    }
                 }
             }
+            // 上方的显示结束
+
+        } else {
+            SwipableCardComponent(
+                cards = cards,
+                onCardIndexChange = { newIndex ->
+                    currentIndex = newIndex
+                },
+                toggleIndices = toggleIndices
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 8.dp)
+                        .shadow(4.dp, RoundedCornerShape(12.dp)) // 添加阴影和圆角
+                        .background(Color(0xFF2A2A3A), shape = RoundedCornerShape(12.dp)) // 设置背景颜色和圆角
+                        .padding(16.dp) // 内部内容的间距
+                ) {
+                    Column {
+                        // 标题
+                        Text(
+                            text = header,
+                            style = TextStyle(
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        // 内容
+                        Text(
+                            text = buildAnnotatedString {
+                                append(content.text)
+                                withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                    append(content.highlighted)
+                                }
+                                content.suffix?.let { append(it) }
+                                content.highlighted2?.let {
+                                    withStyle(style = SpanStyle(color = if (it.startsWith("-")) Color.Red else Color.Green)) {
+                                        append(it)
+                                    }
+                                }
+                                content.suffix2?.let { append(it) }
+                                content.highlighted3?.let {
+                                    withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                        append(it)
+                                    }
+                                }
+                            },
+                            style = TextStyle(
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 16.sp
+                            )
+                        )
+                    }
+                }
+                }
         }
     }
 }
@@ -426,7 +547,8 @@ fun AnalysisAndChartGroup(title: String,
 @Composable
 fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                           onCardIndexChange: (Int) -> Unit,
-                          toggleIndices: List<Int>
+                          toggleIndices: List<Int>,
+                          cardHeight: Dp = 300.dp
      ) {
     var currentIndex by remember { mutableStateOf(0) }
     var dragOffset by remember { mutableStateOf(0f) }
@@ -438,13 +560,13 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Color(0xFF1C1C2A))
             .padding(16.dp)
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp) // the Height of the card
+                .height(cardHeight) // the Height of the card
                 .shadow(15.dp, RoundedCornerShape(25.dp))
                 .offset(x = animatedOffset.dp)
                 .pointerInput(Unit) {
@@ -607,6 +729,17 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
         }
     }
 
+    val labelTextStyle = TextStyle(
+        color = if (isSystemInDarkTheme()) Color.Green else Color.Black, // Dynamic color based on theme
+        fontSize = 14.sp,                                      // Increased font size
+        fontWeight = FontWeight.Medium,                        // Enhanced font weight
+        fontStyle = FontStyle.Italic,                          // Set font style to Italic
+        letterSpacing = 0.5.sp,                                // Increased letter spacing
+        lineHeight = 20.sp,                                    // Adjusted line height
+        fontFamily = FontFamily.SansSerif
+
+    )
+
     LineChart(
         data = remember {
             // Create a Line for each dataset in `data`
@@ -666,7 +799,10 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
                 color = Color.White,
                 fontSize = 12.sp
             )
-        )
+        ),
+        labelHelperProperties = LabelHelperProperties(
+            textStyle = labelTextStyle
+        ),
     )
 }
 
@@ -707,7 +843,7 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
     }
 
     ColumnChart(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 22.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
         data = remember {
             chartData.map { (key, values) ->
                 Bars(
@@ -785,6 +921,12 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         return
     }
 
+    var thickness = 20.dp - (data.flatMap { it.keys }
+        .distinct()
+        .size) * 1.dp
+
+    thickness = if (thickness >= 10.dp) thickness else 10.dp
+
     RowChart(
         data = remember {
             chartData.map { (key, values) ->
@@ -818,7 +960,7 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         barProperties = BarProperties(
             cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
             spacing = 3.dp,
-            thickness = 15.dp
+            thickness = thickness
         ),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
