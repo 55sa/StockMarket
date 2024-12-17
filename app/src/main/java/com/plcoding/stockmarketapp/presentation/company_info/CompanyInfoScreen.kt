@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,19 +34,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.domain.model.CompanyInfo
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import com.plcoding.stockmarketapp.domain.model.MonthlyInfo
 import com.plcoding.stockmarketapp.domain.model.WeeklyInfo
-import com.plcoding.stockmarketapp.domain.repository.StockRepository
-import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
 import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
 import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 
+/**
+ * A styled icon button component with customizable background color and icon tint.
+ */
 @Composable
 fun StyledIconButton(
     icon: ImageVector,
@@ -75,6 +74,9 @@ fun StyledIconButton(
     }
 }
 
+/**
+ * Displays a stock detail item with a label and its value.
+ */
 @Composable
 fun StockDetailItem(label: String, value: Double) {
 
@@ -105,6 +107,9 @@ fun StockDetailItem(label: String, value: Double) {
     }
 }
 
+/**
+ * Card for displaying intraday stock information including close, volume, low, and high values.
+ */
 @Composable
 fun IntradayInfoCard(intradayInfo: IntradayInfo) {
 
@@ -417,7 +422,6 @@ fun ErrorMessage(text: String) {
     )
 }
 
-// 以下是分别用于横屏模式拆分的Chart与Data展示Section
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradayChartSection(intradayInfos: List<IntradayInfo>) {
@@ -558,7 +562,6 @@ fun MonthlyDataSection(monthInfos: List<MonthlyInfo>) {
     }
 }
 
-// 竖屏下原有的Section，保留整合的显示（图表+数据）
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradaySection(intradayInfos: List<IntradayInfo>) {
@@ -707,7 +710,6 @@ fun CompanyInfoScreen(
     ) {
         if (state.error == null) {
             if (isPortrait) {
-                // 竖屏：单列显示（原有逻辑）
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -738,14 +740,12 @@ fun CompanyInfoScreen(
                     }
                 }
             } else {
-                // 横屏模式：分左右两列
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
-                    // 左列：顶部操作行 + 公司信息 + GPT分析 + 数据部分
                     Column(
                         modifier = Modifier
                             .weight(0.4f)
@@ -766,7 +766,6 @@ fun CompanyInfoScreen(
 
                     }
 
-                    // 右列：图表类型选择器 + 图表
                     Column(
                         modifier = Modifier
                             .weight(0.6f),
@@ -794,12 +793,10 @@ fun CompanyInfoScreen(
             }
         }
 
-        // 加载状态
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        // 错误状态
         state.error?.let { error ->
             ErrorMessage(text = error)
         }
@@ -822,7 +819,6 @@ fun TopActionRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 返回按钮
         StyledIconButton(
             icon = Icons.Default.ArrowBack,
             contentDescription = "Back",
@@ -831,7 +827,6 @@ fun TopActionRow(
             iconTint = colorTheme.primaryItem
         )
 
-        // 添加到观察列表按钮或已在观察列表的确认图标
         if (!state.isInWatchList) {
             StyledIconButton(
                 icon = Icons.Default.Add,

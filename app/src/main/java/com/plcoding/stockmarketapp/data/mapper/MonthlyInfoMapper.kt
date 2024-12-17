@@ -7,9 +7,13 @@ import com.plcoding.stockmarketapp.domain.model.MonthlyInfo
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+/**
+ * Converts a [MonthlyInfoDto] data transfer object to a [MonthlyInfo] domain model.
+ * Parses the timestamp to a [LocalDate] using the specified date format.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 fun MonthlyInfoDto.toMonthlyInfo(): MonthlyInfo {
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd") // 调整为匹配实际格式
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     return MonthlyInfo(
         date = LocalDate.parse(this.timestamp, formatter),
         open = this.open,

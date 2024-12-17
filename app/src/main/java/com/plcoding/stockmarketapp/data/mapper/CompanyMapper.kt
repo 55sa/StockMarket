@@ -13,6 +13,9 @@ fun CompanyListingEntity.toCompanyListing(): CompanyListing {
     )
 }
 
+/**
+ * Converts a [CompanyListing] domain model to a [CompanyListingEntity] for database storage.
+ */
 fun CompanyListing.toCompanyListingEntity(): CompanyListingEntity {
     return CompanyListingEntity(
         name = name,
@@ -21,6 +24,10 @@ fun CompanyListing.toCompanyListingEntity(): CompanyListingEntity {
     )
 }
 
+/**
+ * Converts a [CompanyInfoDto] data transfer object to a [CompanyInfo] domain model.
+ * Ensures null values are replaced with default empty strings.
+ */
 fun CompanyInfoDto.toCompanyInfo(): CompanyInfo {
     return CompanyInfo(
         symbol = symbol ?: "",

@@ -78,12 +78,12 @@ fun WeeklyChart(
 
     // Define label text style
     val labelTextStyle = TextStyle(
-        color = colorTheme.primaryText, // Dynamic color based on theme
-        fontSize = 14.sp,                                      // Increased font size
-        fontWeight = FontWeight.Medium,                        // Enhanced font weight
-        fontStyle = FontStyle.Italic,                          // Set font style to Italic
-        letterSpacing = 0.5.sp,                                // Increased letter spacing
-        lineHeight = 20.sp,                                    // Adjusted line height
+        color = colorTheme.primaryText,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+        fontStyle = FontStyle.Italic,
+        letterSpacing = 0.5.sp,
+        lineHeight = 20.sp,
         fontFamily = FontFamily.SansSerif
 
     )
@@ -141,10 +141,10 @@ fun WeeklyChart(
             textStyle = TextStyle(
                 color = textColor,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,                        // Enhanced font weight
-                fontStyle = FontStyle.Italic,                          // Set font style to Italic
-                letterSpacing = 0.5.sp,                                // Increased letter spacing
-                lineHeight = 20.sp,                                    // Adjusted line height
+                fontWeight = FontWeight.Medium,
+                fontStyle = FontStyle.Italic,
+                letterSpacing = 0.5.sp,
+                lineHeight = 20.sp,
                 fontFamily = FontFamily.SansSerif
             )
         ),
@@ -155,10 +155,10 @@ fun WeeklyChart(
             textStyle = TextStyle(
                 color = textColor,  // Y-axis text color
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,                        // Enhanced font weight
-                fontStyle = FontStyle.Italic,                          // Set font style to Italic
-                letterSpacing = 0.5.sp,                                // Increased letter spacing
-                lineHeight = 20.sp,                                    // Adjusted line height
+                fontWeight = FontWeight.Medium,
+                fontStyle = FontStyle.Italic,
+                letterSpacing = 0.5.sp,
+                lineHeight = 20.sp,
                 fontFamily = FontFamily.SansSerif
             ),
         ),

@@ -8,6 +8,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
+/**
+ * Converts an [IntradayInfoDto] to an [IntradayInfo] domain model.
+ * Parses the timestamp to a [LocalDateTime] using the given pattern.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 fun IntradayInfoDto.toIntradayInfo(): IntradayInfo {
     val pattern = "yyyy-MM-dd HH:mm:ss"
@@ -21,3 +25,4 @@ fun IntradayInfoDto.toIntradayInfo(): IntradayInfo {
         high = high
     )
 }
+

@@ -13,10 +13,10 @@ interface StockDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
      fun insertCompanyListings(
         companyListingEntities: List<CompanyListingEntity>
-    ): List<Long> // 修改返回类型为 List<Long>
+    ): List<Long>
 
     @Query("DELETE FROM companylistingentity")
-     fun clearCompanyListings(): Int // 修改返回类型为 Int 或 void
+     fun clearCompanyListings(): Int
 
     @Query(
         """

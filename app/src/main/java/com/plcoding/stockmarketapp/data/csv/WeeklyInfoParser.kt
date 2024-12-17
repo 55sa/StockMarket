@@ -3,12 +3,8 @@ package com.plcoding.stockmarketapp.data.csv
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.opencsv.CSVReader
-import com.plcoding.stockmarketapp.data.mapper.toMonthlyInfo
 import com.plcoding.stockmarketapp.data.mapper.toWeeklyInfo
-import com.plcoding.stockmarketapp.data.remote.dto.MonthlyInfoDto
 import com.plcoding.stockmarketapp.data.remote.dto.WeeklyInfoDto
-import com.plcoding.stockmarketapp.domain.model.IntradayInfo
-import com.plcoding.stockmarketapp.domain.model.MonthlyInfo
 import com.plcoding.stockmarketapp.domain.model.WeeklyInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -38,15 +34,15 @@ class WeeklyInfoParser @Inject constructor() : CSVParser<WeeklyInfo> {
                 val allLines = csvReader.readAll().drop(1)
 
                 // Define the date format matching the CSV's date column
-                val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd") // Adjust pattern as needed
+                val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-                // Get the current date and calculate the cutoff date (4 weeks ago)
+                // Calculate the cutoff date as 4 weeks ago
                 val currentDate = LocalDate.now()
                 val cutoffDate = currentDate.minusWeeks(4)
 
                 allLines
                     .mapNotNull { line ->
-                        // Extract each column with safety checks
+                        // Safely extract data columns, return null if invalid
                         val timestamp = line.getOrNull(0) ?: return@mapNotNull null
                         val open = line.getOrNull(1)?.toDoubleOrNull() ?: return@mapNotNull null
                         val high = line.getOrNull(2)?.toDoubleOrNull() ?: return@mapNotNull null
@@ -54,20 +50,19 @@ class WeeklyInfoParser @Inject constructor() : CSVParser<WeeklyInfo> {
                         val close = line.getOrNull(4)?.toDoubleOrNull() ?: return@mapNotNull null
                         val volume = line.getOrNull(5)?.toDoubleOrNull() ?: 0.0
 
-                        // Parse the timestamp to a LocalDate object
+                        // Parse date, skip record if parsing fails
                         val date = try {
                             LocalDate.parse(timestamp, dateFormatter)
                         } catch (e: Exception) {
-                            // If parsing fails, skip this record
                             return@mapNotNull null
                         }
 
-                        // Filter out records older than 4 weeks
+                        // Ignore records older than 4 weeks
                         if (date.isBefore(cutoffDate)) {
                             return@mapNotNull null
                         }
 
-                        // Create a DTO and map it to the domain model
+                        // Convert DTO to domain model
                         val dto = WeeklyInfoDto(
                             timestamp = timestamp,
                             open = open,
@@ -78,9 +73,9 @@ class WeeklyInfoParser @Inject constructor() : CSVParser<WeeklyInfo> {
                         )
                         dto.toWeeklyInfo()
                     }
-                    .sortedBy { it.date } // Sort the list by date in ascending order
+                    .sortedBy { it.date } // Sort records by date in ascending order
             } finally {
-                // Ensure the CSVReader is closed to free resources
+                // Close CSVReader to release resources
                 csvReader.close()
             }
         }

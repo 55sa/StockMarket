@@ -3,7 +3,6 @@ package com.plcoding.stockmarketapp.presentation.company_listings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,6 +17,13 @@ import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
 import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 
+
+/**
+ * Displays a single company listing with logo, name, and exchange information.
+ *
+ * @param company The [CompanyListing] data object to display.
+ * @param modifier Optional [Modifier] for layout customization.
+ */
 @Composable
 fun CompanyItem(
     company: CompanyListing,
@@ -32,37 +38,46 @@ fun CompanyItem(
         Column(
             modifier = Modifier.weight(1f)
         ) {
+            // Extract company name to fetch logo URL dynamically
             val companyName = company.name.substringBefore(" ").lowercase()
             val logoUrl = "https://logo.clearbit.com/${companyName}.com"
+
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Display company logo
                 Image(
                     painter = rememberAsyncImagePainter(model = logoUrl),
                     contentDescription = "${company.name} logo",
                     modifier = Modifier
-                        .size(40.dp)
-                        .padding(end = 8.dp)
+                        .size(40.dp) // Set size for the logo image
+                        .padding(end = 8.dp) // Padding to the right of the logo
                 )
 
-
+                // Display company name
                 Text(
                     text = company.name,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     color = colorTheme.primaryText,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, // Ellipsis for overflowed text
+                    maxLines = 1, // Limit to one line
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+
+                Spacer(modifier = Modifier.width(4.dp)) // Small spacer between name and exchange
+
+                // Display exchange information
                 Text(
                     text = company.exchange,
                     fontWeight = FontWeight.Light,
                     color = colorTheme.primaryText
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(8.dp)) // Space between rows
+
+            // Display company symbol
             Text(
                 text = "(${company.symbol})",
                 fontStyle = FontStyle.Italic,
@@ -71,5 +86,4 @@ fun CompanyItem(
         }
     }
 }
-
 

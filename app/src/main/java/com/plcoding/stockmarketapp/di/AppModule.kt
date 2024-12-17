@@ -34,6 +34,12 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    /**
+     * Provides a singleton instance of [StockApi] configured with Retrofit.
+     * Includes a logging interceptor for basic HTTP logs.
+     *
+     * @return A configured instance of [StockApi].
+     */
     @Provides
     @Singleton
     fun provideStockApi(): StockApi {
@@ -46,6 +52,13 @@ object AppModule {
             .create()
     }
 
+    /**
+     * Provides a singleton instance of [GptApi] configured with Retrofit.
+     * Adds an authorization header and JSON content type for OpenAI requests.
+     * Includes a logging interceptor for detailed HTTP body logs.
+     *
+     * @return A configured instance of [GptApi].
+     */
     @Provides
     @Singleton
     fun provideGptApi(): GptApi {
@@ -71,7 +84,13 @@ object AppModule {
     }
 
 
-
+    /**
+     * Provides a singleton instance of the [StockDatabase] using Room.
+     * Configured with database migration strategy from version 1 to 2.
+     *
+     * @param app The application context.
+     * @return A configured instance of [StockDatabase].
+     */
     @Provides
     @Singleton
     fun provideStockDatabase(app: Application): StockDatabase {
@@ -82,6 +101,19 @@ object AppModule {
         ).addMigrations(MIGRATION_1_2).build()
     }
 
+    /**
+     * Provides a singleton instance of [StockRepository] for accessing stock data.
+     * Injects required dependencies such as APIs, database, and parsers.
+     *
+     * @param api The [StockApi] instance for network requests.
+     * @param gptApi The [GptApi] instance for GPT-related requests.
+     * @param db The local [StockDatabase] instance.
+     * @param companyListingsParser Parser for company listings data.
+     * @param intradayInfoParser Parser for intraday stock data.
+     * @param monthlyInfoParser Parser for monthly stock data.
+     * @param weeklyInfoParser Parser for weekly stock data.
+     * @return A configured instance of [StockRepository].
+     */
     @Module
     @InstallIn(SingletonComponent::class)
     object AppModule {
@@ -102,6 +134,12 @@ object AppModule {
         }
     }
 
+    /**
+     * Provides a singleton instance of [SignInClient] for Google authentication.
+     *
+     * @param context The application context.
+     * @return A configured instance of [SignInClient].
+     */
     @Provides
     @Singleton
     fun provideSignInClient(
@@ -110,6 +148,13 @@ object AppModule {
         return Identity.getSignInClient(context)
     }
 
+    /**
+     * Provides a singleton instance of [GoogleAuthUiClient] for handling Google sign-in UI.
+     *
+     * @param context The application context.
+     * @param signInClient The [SignInClient] instance for managing sign-in requests.
+     * @return A configured instance of [GoogleAuthUiClient].
+     */
     @Provides
     @Singleton
     fun provideGoogleAuthUiClient(

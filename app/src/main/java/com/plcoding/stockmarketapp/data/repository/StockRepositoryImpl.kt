@@ -40,6 +40,11 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
+
+/**
+ * Implementation of [StockRepository] responsible for managing stock data operations,
+ * including database access, remote API calls, and analysis.
+ */
 @Singleton
 class StockRepositoryImpl @Inject constructor(
     private val api: StockApi,
@@ -55,6 +60,9 @@ class StockRepositoryImpl @Inject constructor(
     private val dao = db.stockdao
     private val watchDao = db.watchdao
 
+    /**
+     * Retrieves company listings from local cache or remote API based on fetch conditions.
+     */
     override suspend fun getCompanyListings(
         fetchFromRemote: Boolean,
         query: String
@@ -106,7 +114,9 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
-
+    /**
+     * Fetches intraday stock information for the specified symbol.
+     */
     override suspend fun getIntradayInfo(symbol: String): Resource<List<IntradayInfo>> = withContext(Dispatchers.IO) {
          try {
             val response = api.getIntradayInfo(symbol)
@@ -125,6 +135,9 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Fetches monthly stock information for the specified symbol.
+     */
     override suspend fun getMonthlyInfo(symbol: String): Resource<List<MonthlyInfo>> = withContext(Dispatchers.IO) {
         try {
             val response = api.getMonthlyInfo(symbol)
@@ -143,6 +156,9 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Fetches weekly stock information for the specified symbol.
+     */
     override suspend fun getWeeklyInfo(symbol: String): Resource<List<WeeklyInfo>> = withContext(Dispatchers.IO) {
         try {
             val response = api.getWeeklyInfo(symbol)
@@ -162,6 +178,9 @@ class StockRepositoryImpl @Inject constructor(
 
     }
 
+    /**
+     * Retrieves company information for the specified symbol.
+     */
     override suspend fun getCompanyInfo(symbol: String): Resource<CompanyInfo> = withContext(Dispatchers.IO) {
          try {
             val result = api.getCompanyInfo(symbol)
@@ -179,6 +198,9 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Retrieves watchlist details and maps them to [CompanyListing].
+     */
     override suspend fun getWatchlistWithDetails(): Resource<List<CompanyListing>> = withContext(Dispatchers.IO) {
         try {
             val watchlistWithDetails = watchDao.getWatchlistWithDetails()
@@ -191,11 +213,17 @@ class StockRepositoryImpl @Inject constructor(
     }
 
 
+    /**
+     * Checks if the database has been initialized with company listings.
+     */
     override suspend fun isDatabaseInitialized(): Boolean = withContext(Dispatchers.IO) {
         dao.getCompanyListingCount() > 0
     }
 
 
+    /**
+     * Initializes the database with company listings fetched from the remote API.
+     */
     override suspend fun initializeDatabaseFromRemote(): Resource<Unit> = withContext(Dispatchers.IO) {
          try {
             val response = api.getListings()
@@ -212,10 +240,12 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Analyzes intraday trading data using GPT API for insights.
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun analyzeIntradayInfoWithGpt(tradeInfoList: List<IntradayInfo>): Resource<String> = withContext(Dispatchers.IO) {
          try {
-            // Build the GPT request
             val tradesSummary = tradeInfoList.joinToString("\n") {
                 "Timestamp: ${it.date}, Close: ${it.close}"
             }
@@ -226,25 +256,25 @@ class StockRepositoryImpl @Inject constructor(
         """.trimIndent()
 
             val gptRequest = GptRequest(
-                model = "gpt-3.5-turbo", // Ensure tshe model is included
+                model = "gpt-3.5-turbo",
                 messages = listOf(Message(role = "user", content = prompt)),
                 max_tokens = 200,
                 temperature = 0.7
             )
 
-            // Send request to GPT API
             val response = gptApi.analyzeIntradayInfo(gptRequest)
 
             val jsonResponse = response.string()
             val content = extractContentFromJson(jsonResponse)
 
 
-            Resource.Success(content) // Convert `ResponseBody` to string
+            Resource.Success(content)
         } catch (e: Exception) {
             e.printStackTrace()
             Resource.Error("Failed to analyze with GPT: ${e.message}")
         }
     }
+
 
     override suspend fun addToWatchList(symbol: String) = withContext(Dispatchers.IO) {
         watchDao.insertwatch(
@@ -270,7 +300,9 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
-
+    /**
+     * Extracts content from GPT API JSON response.
+     */
     private suspend fun extractContentFromJson(jsonResponse: String): String = withContext(Dispatchers.IO) {
        try {
             val root = JSONObject(jsonResponse)
@@ -288,6 +320,9 @@ class StockRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Fetches a data stream from the specified URL.
+     */
   override suspend fun fetchStreamFromUrl(url: String): InputStream? = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
 
