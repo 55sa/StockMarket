@@ -1,6 +1,7 @@
 package com.plcoding.stockmarketapp.presentation.trading_analysis
 
 // Jetpack Compose
+import android.content.res.Configuration
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -73,6 +75,20 @@ fun TradingAnalysisScreen(
             }
         }
     } else {
+        if(LocalConfiguration.current.screenWidthDp > 600){
+            Scaffold(
+
+                bottomBar = {
+                    BottomNavigationBar(
+                        navigator = navigator
+                    )
+                }
+            ) { innerPadding ->
+                Column(modifier = Modifier.padding(innerPadding)) {
+                    ChartScreen(viewModel = viewModel)
+                }
+            }
+        }else{
 
         Scaffold(
             topBar = { FloatingTitle() },
@@ -86,5 +102,5 @@ fun TradingAnalysisScreen(
                 ChartScreen(viewModel = viewModel)
             }
         }
-    }
+    }}
 }

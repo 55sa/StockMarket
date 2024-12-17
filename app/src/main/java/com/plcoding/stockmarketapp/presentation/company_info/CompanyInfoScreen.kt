@@ -1,5 +1,6 @@
 package com.plcoding.stockmarketapp.presentation.company_info
 
+import android.content.res.Configuration
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -264,19 +266,16 @@ fun ChartTypeSelector(
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        // Intraday Button
         ChartTypeButton(
             text = "Intraday",
             isSelected = selectedChartType == ChartType.INTRADAY,
             onClick = { onSelectChartType(ChartType.INTRADAY) }
         )
-        // Weekly Button
         ChartTypeButton(
             text = "Weekly",
             isSelected = selectedChartType == ChartType.WEEKLY,
             onClick = { onSelectChartType(ChartType.WEEKLY) }
         )
-        // Monthly Button
         ChartTypeButton(
             text = "Monthly",
             isSelected = selectedChartType == ChartType.MONTHLY,
@@ -395,11 +394,141 @@ fun ErrorMessage(text: String) {
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Bold,
             fontStyle = FontStyle.Italic
-        ),
-
+        )
     )
 }
 
+// 以下是分别用于横屏模式拆分的Chart与Data展示Section
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun IntradayChartSection(intradayInfos: List<IntradayInfo>) {
+    if (intradayInfos.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Market Summary",
+            style = MaterialTheme.typography.h6.copy(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colors.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        StockChart(
+            infos = intradayInfos,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(horizontal = 8.dp)
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun IntradayDataSection(intradayInfos: List<IntradayInfo>) {
+    if (intradayInfos.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Stock Details",
+            style = MaterialTheme.typography.h6.copy(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colors.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        IntradayInfoCard(intradayInfo = intradayInfos.last())
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun WeeklyChartSection(weekInfos: List<WeeklyInfo>) {
+    if (weekInfos.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Weekly Summary",
+            style = MaterialTheme.typography.h6.copy(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colors.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        WeeklyChart(
+            infos = weekInfos,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(horizontal = 8.dp)
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun WeeklyDataSection(weekInfos: List<WeeklyInfo>) {
+    if (weekInfos.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Weekly Stock Details",
+            style = MaterialTheme.typography.h6.copy(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colors.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        WeeklyInfoCard(weeklyInfo = weekInfos.last())
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun MonthlyChartSection(monthInfos: List<MonthlyInfo>) {
+    if (monthInfos.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Monthly Summary",
+            style = MaterialTheme.typography.h6.copy(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colors.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        MonthlyChart(
+            infos = monthInfos,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(horizontal = 8.dp)
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun MonthlyDataSection(monthInfos: List<MonthlyInfo>) {
+    if (monthInfos.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Monthly Stock Details",
+            style = MaterialTheme.typography.h6.copy(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                color = MaterialTheme.colors.primary
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        MonthlyInfoCard(monthlyInfo = monthInfos.last())
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+// 竖屏下原有的Section，保留整合的显示（图表+数据）
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradaySection(intradayInfos: List<IntradayInfo>) {
@@ -432,7 +561,6 @@ fun IntradaySection(intradayInfos: List<IntradayInfo>) {
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
-        // Display the latest IntradayInfo item
         IntradayInfoCard(intradayInfo = intradayInfos.last())
         Spacer(modifier = Modifier.height(8.dp))
     }
@@ -470,7 +598,6 @@ fun WeeklySection(weekInfos: List<WeeklyInfo>) {
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
-        // Display the latest WeeklyInfo item
         WeeklyInfoCard(weeklyInfo = weekInfos.last())
         Spacer(modifier = Modifier.height(8.dp))
     }
@@ -508,16 +635,10 @@ fun MonthlySection(monthInfos: List<MonthlyInfo>) {
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
-        // Display the latest MonthlyInfo item
         MonthlyInfoCard(monthlyInfo = monthInfos.last())
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
-
-
-
-
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -534,98 +655,155 @@ fun CompanyInfoScreen(
         viewModel.checkIfInWatchlist(symbol)
     }
 
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colors.background)
     ) {
         if (state.error == null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                // Top Row with Back and Add to Watchlist Buttons
-                Row(
+            if (isPortrait) {
+                // 竖屏：单列显示（原有逻辑）
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 返回按钮
-                    StyledIconButton(
-                        icon = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        onClick = { navigator.popBackStack() },
-                        backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
-                        iconTint = MaterialTheme.colors.primary
+                    TopActionRow(state = state, symbol = symbol, navigator = navigator, viewModel = viewModel)
+
+                    state.company?.let { company ->
+                        CompanyDetailsCard(company = company)
+                    }
+
+                    ChartTypeSelector(
+                        selectedChartType = selectedChartType,
+                        onSelectChartType = { selectedChartType = it }
                     )
 
-                    // 添加到观察列表按钮
-                    if (!state.isInWatchList) {
-                        StyledIconButton(
-                            icon = Icons.Default.Add,
-                            contentDescription = "Add to Watchlist",
-                            onClick = { viewModel.addToWatchList(symbol) },
-                            backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colors.primary
+                    when (selectedChartType) {
+                        ChartType.INTRADAY -> IntradaySection(intradayInfos = state.stockInfos)
+                        ChartType.WEEKLY -> WeeklySection(weekInfos = state.weekInfos)
+                        ChartType.MONTHLY -> MonthlySection(monthInfos = state.monthInfos)
+                    }
+
+                    state.gptmesg?.let { gptMessage ->
+                        GPTAnalysisCard(gptMessage = gptMessage)
+                    }
+                }
+            } else {
+                // 横屏模式：分左右两列
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
+                    // 左列：顶部操作行 + 公司信息 + GPT分析 + 数据部分
+                    Column(
+                        modifier = Modifier
+                            .weight(0.4f)
+                            .padding(end = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TopActionRow(state = state, symbol = symbol, navigator = navigator, viewModel = viewModel)
+
+                        state.company?.let { company ->
+                            CompanyDetailsCard(company = company)
+                        }
+
+                        state.gptmesg?.let { gptMessage ->
+                            GPTAnalysisCard(gptMessage = gptMessage)
+                        }
+
+
+                    }
+
+                    // 右列：图表类型选择器 + 图表
+                    Column(
+                        modifier = Modifier
+                            .weight(0.6f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        ChartTypeSelector(
+                            selectedChartType = selectedChartType,
+                            onSelectChartType = { selectedChartType = it }
                         )
-                    } else {
-                        // 已添加到观察列表时显示一个确认图标
-                        StyledIconButton(
-                            icon = Icons.Default.Check,
-                            contentDescription = "In Watchlist",
-                            onClick = { /* 可选：显示已添加到观察列表的反馈 */ },
-                            backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.1f),
-                            iconTint = MaterialTheme.colors.secondary
-                        )
-                    }
-                }
 
-                // Company Details
-                state.company?.let { company ->
-                    CompanyDetailsCard(company = company)
-                }
+                        when (selectedChartType) {
+                            ChartType.INTRADAY -> IntradayChartSection(intradayInfos = state.stockInfos)
+                            ChartType.WEEKLY -> WeeklyChartSection(weekInfos = state.weekInfos)
+                            ChartType.MONTHLY -> MonthlyChartSection(monthInfos = state.monthInfos)
+                        }
 
-                // Chart Type Selector
-                ChartTypeSelector(
-                    selectedChartType = selectedChartType,
-                    onSelectChartType = { selectedChartType = it }
-                )
-
-                // Display the selected chart and information
-                when (selectedChartType) {
-                    ChartType.INTRADAY -> {
-                        IntradaySection(intradayInfos = state.stockInfos)
+                        when (selectedChartType) {
+                            ChartType.INTRADAY -> IntradayDataSection(intradayInfos = state.stockInfos)
+                            ChartType.WEEKLY -> WeeklyDataSection(weekInfos = state.weekInfos)
+                            ChartType.MONTHLY -> MonthlyDataSection(monthInfos = state.monthInfos)
+                        }
                     }
-                    ChartType.WEEKLY -> {
-                        WeeklySection(weekInfos = state.weekInfos)
-                    }
-                    ChartType.MONTHLY -> {
-                        MonthlySection(monthInfos = state.monthInfos)
-                    }
-                }
-
-                // GPT Analysis
-                state.gptmesg?.let { gptMessage ->
-                    GPTAnalysisCard(gptMessage = gptMessage)
                 }
             }
         }
 
-        // Loading State
+        // 加载状态
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        // Error State
+        // 错误状态
         state.error?.let { error ->
             ErrorMessage(text = error)
+        }
+    }
+}
+
+@Composable
+fun TopActionRow(
+    state: CompanyInfoState,
+    symbol: String,
+    navigator: DestinationsNavigator,
+    viewModel: CompanyInfoViewModel
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 返回按钮
+        StyledIconButton(
+            icon = Icons.Default.ArrowBack,
+            contentDescription = "Back",
+            onClick = { navigator.popBackStack() },
+            backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
+            iconTint = MaterialTheme.colors.primary
+        )
+
+        // 添加到观察列表按钮或已在观察列表的确认图标
+        if (!state.isInWatchList) {
+            StyledIconButton(
+                icon = Icons.Default.Add,
+                contentDescription = "Add to Watchlist",
+                onClick = { viewModel.addToWatchList(symbol) },
+                backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colors.primary
+            )
+        } else {
+            StyledIconButton(
+                icon = Icons.Default.Check,
+                contentDescription = "In Watchlist",
+                onClick = { /* 点击反馈逻辑 */ },
+                backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.1f),
+                iconTint = MaterialTheme.colors.secondary
+            )
         }
     }
 }

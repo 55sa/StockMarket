@@ -40,18 +40,24 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.platform.LocalConfiguration
 
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.times
+import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
+import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 
 sealed class ChartType {
     data class Line(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
@@ -78,12 +84,15 @@ data class AnnotatedText(
 )
 
 
-
-
 @Composable
 fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
     val state = viewModel.state.collectAsState().value
+
+    val isLargeScreen = LocalConfiguration.current.screenWidthDp > 600
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
 
     // V 2.0
 
@@ -272,8 +281,10 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(androidx.compose.material.MaterialTheme.colors.background)
+            .background(colorTheme.screenBackgroundColor)
     ) {
+        // Display App name don't matter
+
 
 
         LazyColumn(
@@ -286,7 +297,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                     title = "Trading Analysis",
                     analysisContent = analysisGroup1,
                     cards = chartGroup1,
-                    toggleIndices = toggleIndices1
+                    toggleIndices = toggleIndices1,
+                    isLargeScreen = isLargeScreen
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -300,7 +312,8 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
                     title = "Profit Analysis",
                     analysisContent = analysisGroup2,
                     cards = chartGroup2,
-                    toggleIndices = toggleIndices2
+                    toggleIndices = toggleIndices2,
+                    isLargeScreen = isLargeScreen
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -315,91 +328,204 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
     }
 }
 
-
 @Composable
-fun AnalysisAndChartGroup(title: String,
-                          analysisContent: List<List<Pair<String, AnnotatedText>>>,
-                          cards: List<Pair<String, ChartType>>,
-                          toggleIndices: List<Int>
+fun AnalysisAndChartGroup(
+    title: String,
+    analysisContent: List<List<Pair<String, AnnotatedText>>>,
+    cards: List<Pair<String, ChartType>>,
+    toggleIndices: List<Int>,
+    isLargeScreen: Boolean // 新增参数，用于判断屏幕是否较大
 ) {
     var currentIndex by remember { mutableStateOf(0) }
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
             .shadow(8.dp, RoundedCornerShape(16.dp))
-            .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
-    ) {
+//            .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
+            .background(colorTheme.background, shape = RoundedCornerShape(16.dp))
 
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            contentAlignment = Alignment.Center // set to center
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = title,
                 style = TextStyle(
-                    color = Color(0xFF1E88E5),
+                    color = colorTheme.primaryText,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
             )
         }
 
-        // 卡片组件
-        SwipableCardComponent(
-            cards = cards,
-            onCardIndexChange =  { newIndex ->
-                currentIndex = newIndex },
-            toggleIndices
+        // 添加下方的分割线
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            thickness = 1.dp,
+            color = colorTheme.divider.copy(alpha = 0.5f) // 分割线颜色
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
-            Column(
-                modifier = Modifier.padding(vertical = 8.dp)
+        if (isLargeScreen) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = header,
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.padding(bottom = 4.dp).padding(horizontal = 6.dp)
-                )
-                Column(
-                    modifier = Modifier.padding(horizontal = 6.dp).fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(300.dp)
                 ) {
-                    val annotatedText = buildAnnotatedString {
-                        append(content.text)
-                        withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
-                            append(content.highlighted)
-                        }
-                        content.suffix?.let { append(it) }
-                        content.highlighted2?.let {
-                            withStyle(style = SpanStyle(color = if (it.startsWith("-")) Color.Red else Color.Green)) {
-                                append(it)
-                            }
-                        }
-                        content.suffix2?.let { append(it) }
-                        content.highlighted3?.let {
-                            withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
-                                append(it)
+                    SwipableCardComponent(
+                        cards = cards,
+                        onCardIndexChange = { newIndex ->
+                            currentIndex = newIndex
+                        },
+                        toggleIndices = toggleIndices,
+                        cardHeight = 400.dp
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 16.dp)
+                ) {
+
+                    analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp, horizontal = 8.dp)
+                                .shadow(4.dp, RoundedCornerShape(12.dp)) // 添加阴影和圆角
+                                .background(colorTheme.cardBackground, shape = RoundedCornerShape(12.dp)) // 设置背景颜色和圆角
+                                .padding(16.dp) // 内部内容的间距
+                        ) {
+                            Column {
+                                // 标题
+                                Text(
+                                    text = header,
+                                    style = TextStyle(
+                                        color = colorTheme.primaryText,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                                // 内容
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append(content.text)
+                                        withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                            append(content.highlighted)
+                                        }
+                                        content.suffix?.let { append(it) }
+                                        content.highlighted2?.let {
+                                            withStyle(style = SpanStyle(color = if (it.startsWith("-")) colorTheme.analysisRed else colorTheme.analysisGreen)) {
+                                                append(it)
+                                            }
+                                        }
+                                        content.suffix2?.let { append(it) }
+                                        content.highlighted3?.let {
+                                            withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                                append(it)
+                                            }
+                                        }
+                                    },
+                                    style = TextStyle(
+                                        color = colorTheme.primaryText.copy(alpha = 0.7f),
+                                        fontSize = 16.sp
+                                    )
+                                )
                             }
                         }
                     }
-                    Text(
-                        text = annotatedText,
-                        style = TextStyle(
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 16.sp
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        cards.forEachIndexed { index, _ ->
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .padding(horizontal = 4.dp)
+                                    .background(
+                                        color = if (index == currentIndex) Color(0xFF1E88E5) else Color.Gray,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                    }
+                }
+            }
+
+
+        } else {
+            SwipableCardComponent(
+                cards = cards,
+                onCardIndexChange = { newIndex ->
+                    currentIndex = newIndex
+                },
+                toggleIndices = toggleIndices
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            analysisContent.getOrNull(currentIndex)?.forEach { (header, content) ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 8.dp)
+                        .shadow(4.dp, RoundedCornerShape(12.dp))
+                        .background(colorTheme.cardBackground, shape = RoundedCornerShape(12.dp))
+                        .padding(16.dp)
+                ) {
+                    Column {
+                        // 标题
+                        Text(
+                            text = header,
+                            style = TextStyle(
+                                color = colorTheme.primaryText,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        // 内容
+                        Text(
+                            text = buildAnnotatedString {
+                                append(content.text)
+                                withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                    append(content.highlighted)
+                                }
+                                content.suffix?.let { append(it) }
+                                content.highlighted2?.let {
+                                    withStyle(style = SpanStyle(color = if (it.startsWith("-")) colorTheme.analysisRed else colorTheme.analysisGreen)) {
+                                        append(it)
+                                    }
+                                }
+                                content.suffix2?.let { append(it) }
+                                content.highlighted3?.let {
+                                    withStyle(style = SpanStyle(color = Color(0xFF1E88E5))) {
+                                        append(it)
+                                    }
+                                }
+                            },
+                            style = TextStyle(
+                                color = colorTheme.primaryText.copy(alpha = 0.7f),
+                                fontSize = 16.sp
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -410,26 +536,25 @@ fun AnalysisAndChartGroup(title: String,
 @Composable
 fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                           onCardIndexChange: (Int) -> Unit,
-                          toggleIndices: List<Int>
+                          toggleIndices: List<Int>,
+                          cardHeight: Dp = 300.dp
 ) {
     var currentIndex by remember { mutableStateOf(0) }
     var dragOffset by remember { mutableStateOf(0f) }
     val animatedOffset by animateFloatAsState(targetValue = dragOffset)
     val switchStates = remember { mutableStateMapOf<Int, Boolean>() }
-
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .padding(16.dp)
+            .background(colorTheme.background)
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp) // the Height of the card
-                .shadow(15.dp, RoundedCornerShape(25.dp))
+                .height(cardHeight) // the Height of the card
                 .offset(x = animatedOffset.dp)
                 .pointerInput(Unit) {
                     detectDragGestures(
@@ -454,10 +579,11 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                             dragOffset = 0f
                         }
                     )
-                },
+                }.padding(16.dp).shadow(15.dp, RoundedCornerShape(25.dp))
+            ,
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A3A),
-                contentColor = Color.White
+                containerColor = colorTheme.cardBackground, // 使用主题卡片背景
+                contentColor = colorTheme.primaryText
             )
         ) {
             Column(
@@ -477,12 +603,12 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                     BasicText(
                         text = cards[currentIndex].first,
                         style = TextStyle(
-                            color = Color.White,
+                            color = colorTheme.primaryText,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.Center,
                             shadow = Shadow(
-                                color = Color.Black,
+                                color = colorTheme.shadow,
                                 offset = Offset(4f, 4f),
                                 blurRadius = 8f
                             )
@@ -548,12 +674,12 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
 @Composable
 fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isToggled: Boolean = false) {
 
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = Color.Gray)
+        Text("No data available", color = colorTheme.secondaryText)
         return
     }
-
-
 
     // Convert each map in data to List<Pair<String, Double>> while sorting keys
     val chartData = if (isToggled) {
@@ -577,7 +703,7 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
         .maxOrNull() ?: 0.0 // Default to 0.0 if no data
 
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = Color.Gray)
+        Text("No data to display", color = colorTheme.secondaryText)
         return
     }
 
@@ -592,10 +718,9 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
             (0 until maxLabels).map { index -> keys[(index * step).toInt()] }
         }
     }
-    val isDarkTheme = isSystemInDarkTheme()
 
     val labelTextStyle = TextStyle(
-        color = if (isDarkTheme) Color.Green else Color.Black, // Dynamic color based on theme
+        color =  colorTheme.primaryText, // Dynamic color based on theme
         fontSize = 14.sp,                                      // Increased font size
         fontWeight = FontWeight.Medium,                        // Enhanced font weight
         fontStyle = FontStyle.Italic,                          // Set font style to Italic
@@ -614,22 +739,22 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
                     values = pairs.map { it.second }, // Extract values for this dataset
                     color = when (index) {
                         0 -> Brush.horizontalGradient(
-                            colors = listOf(Color(0xFFDE942A), Color(0xFFB94621))
+                            colors = colorTheme.chartGradientColorSet1
                         )
                         1 -> Brush.horizontalGradient(
-                            colors = listOf(Color(0xFF3AB3E8), Color(0xFF0056A6))
+                            colors = colorTheme.chartGradientColorSet2
                         )
                         2 -> Brush.horizontalGradient(
-                            colors = listOf(Color(0xFF76C7C0), Color(0xFF2A9D8F))
+                            colors = colorTheme.chartGradientColorSet3
                         )
                         else -> Brush.horizontalGradient(
-                            colors = listOf(Color.Gray, Color.DarkGray)
+                            colors = colorTheme.chartColorDefault
                         )
                     },
                     firstGradientFillColor = when (index) {
-                        0 -> Color(0xFFDE942A).copy(alpha = .5f)
-                        1 -> Color(0xFF3AB3E8).copy(alpha = .5f)
-                        2 -> Color(0xFF76C7C0).copy(alpha = .5f)
+                        0 -> colorTheme.chartGradientFillColor1.copy(alpha = .5f)
+                        1 -> colorTheme.chartGradientFillColor2.copy(alpha = .5f)
+                        2 -> colorTheme.chartGradientFillColor3.copy(alpha = .5f)
                         else -> Color.Gray.copy(alpha = .5f)
                     },
                     secondGradientFillColor = Color.Transparent,
@@ -650,7 +775,7 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
             enabled = true,
             labels = sampledLabels,
             textStyle = TextStyle.Default.copy(
-                color = Color.White,
+                color = colorTheme.primaryText,
                 fontSize = 12.sp
             ),
             padding = 5.dp, // Between Chart and label
@@ -661,10 +786,13 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
         ),
         indicatorProperties = HorizontalIndicatorProperties(
             textStyle = TextStyle.Default.copy(
-                color = Color.White,
+                color = colorTheme.primaryText,
                 fontSize = 12.sp
             )
-        )
+        ),
+        labelHelperProperties = LabelHelperProperties(
+            textStyle = labelTextStyle
+        ),
     )
 }
 
@@ -675,6 +803,17 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
         Text("No data available", color = Color.Gray)
         return
     }
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+    val labelTextStyle = TextStyle(
+        color =  colorTheme.primaryText, // Dynamic color based on theme
+        fontSize = 14.sp,                                      // Increased font size
+        fontWeight = FontWeight.Medium,                        // Enhanced font weight
+        fontStyle = FontStyle.Italic,                          // Set font style to Italic
+        letterSpacing = 0.5.sp,                                // Increased letter spacing
+        lineHeight = 20.sp,                                    // Adjusted line height
+        fontFamily = FontFamily.SansSerif
+
+    )
 
     // Combine all unique keys from datasets to create a unified x-axis
     val chartData = if (isToggled) {
@@ -700,12 +839,12 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = Color.Gray)
+        Text("No data to display", color = colorTheme.secondaryText)
         return
     }
 
     ColumnChart(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 22.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
         data = remember {
             chartData.map { (key, values) ->
                 Bars(
@@ -715,17 +854,17 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
                             label = labels.getOrNull(index) ?: "Dataset ${index + 1}",
                             value = value,
                             color = when (index) {
-                                1 -> Brush.verticalGradient(
-                                    colors = listOf(Color(0xFF3AB3E8), Color(0xFF0056A6))
+                                0 -> Brush.horizontalGradient(
+                                    colors = colorTheme.chartGradientColorSet1
                                 )
-                                0 -> Brush.verticalGradient(
-                                    colors = listOf(Color(0xFFFFA726), Color(0xFFFF5722))
+                                1 -> Brush.horizontalGradient(
+                                    colors = colorTheme.chartGradientColorSet2
                                 )
-                                2 -> Brush.verticalGradient(
-                                    colors = listOf(Color(0xFF76C7C0), Color(0xFF2A9D8F))
+                                2 -> Brush.horizontalGradient(
+                                    colors = colorTheme.chartGradientColorSet3
                                 )
-                                else -> Brush.verticalGradient(
-                                    colors = listOf(Color.Gray, Color.DarkGray)
+                                else -> Brush.horizontalGradient(
+                                    colors = colorTheme.chartColorDefault
                                 )
                             }
                         )
@@ -744,10 +883,7 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
         ),
         labelProperties = LabelProperties(
             enabled = true,
-            textStyle = TextStyle.Default.copy(
-                color = Color.White,
-                fontSize = 10.sp
-            ),
+            textStyle = labelTextStyle,
             padding = 5.dp, // Between Chart and label
             rotation = LabelProperties.Rotation(
                 mode = LabelProperties.Rotation.Mode.Force,
@@ -756,7 +892,7 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
         ),
         indicatorProperties = HorizontalIndicatorProperties(
             textStyle = TextStyle.Default.copy(
-                color = Color.White,
+                color = colorTheme.primaryText,
                 fontSize = 12.sp
             )
         )
@@ -769,7 +905,18 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         Text("No data available", color = Color.Gray)
         return
     }
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
+    val labelTextStyle = TextStyle(
+        color =  colorTheme.primaryText, // Dynamic color based on theme
+        fontSize = 14.sp,                                      // Increased font size
+        fontWeight = FontWeight.Medium,                        // Enhanced font weight
+        fontStyle = FontStyle.Italic,                          // Set font style to Italic
+        letterSpacing = 0.5.sp,                                // Increased letter spacing
+        lineHeight = 20.sp,                                    // Adjusted line height
+        fontFamily = FontFamily.SansSerif
+
+    )
     // Combine all unique keys from datasets to create a unified x-axis
     val chartData = data.flatMap { it.keys }
         .distinct()
@@ -779,9 +926,15 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = Color.Gray)
+        Text("No data to display", color = colorTheme.secondaryText)
         return
     }
+
+    var thickness = 20.dp - (data.flatMap { it.keys }
+        .distinct()
+        .size) * 1.dp
+
+    thickness = if (thickness >= 10.dp) thickness else 10.dp
 
     RowChart(
         data = remember {
@@ -794,16 +947,16 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
                             value = value,
                             color = when (index) {
                                 0 -> Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFFFFA726), Color(0xFFFF5722))
+                                    colors = colorTheme.chartGradientColorSet1
                                 )
                                 1 -> Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF3AB3E8), Color(0xFF0056A6))
+                                    colors = colorTheme.chartGradientColorSet2
                                 )
                                 2 -> Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF76C7C0), Color(0xFF2A9D8F))
+                                    colors = colorTheme.chartGradientColorSet3
                                 )
                                 else -> Brush.horizontalGradient(
-                                    colors = listOf(Color.Gray, Color.DarkGray)
+                                    colors = colorTheme.chartColorDefault
                                 )
                             }
                         )
@@ -816,7 +969,7 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         barProperties = BarProperties(
             cornerRadius = Bars.Data.Radius.Rectangle(topRight = 6.dp, topLeft = 6.dp),
             spacing = 3.dp,
-            thickness = 15.dp
+            thickness = thickness
         ),
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -824,10 +977,7 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         ),
         labelProperties = LabelProperties(
             enabled = true,
-            textStyle = TextStyle.Default.copy(
-                color = Color.White,
-                fontSize = 12.sp
-            ),
+            textStyle = labelTextStyle,
             padding = 5.dp, // Between Chart and label
             rotation = LabelProperties.Rotation(
                 mode = LabelProperties.Rotation.Mode.Force,
@@ -836,7 +986,7 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         ),
         indicatorProperties = VerticalIndicatorProperties(
             textStyle = TextStyle.Default.copy(
-                color = Color.White,
+                color = colorTheme.primaryText,
                 fontSize = 12.sp
             )
         )

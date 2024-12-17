@@ -1,6 +1,7 @@
 package com.plcoding.stockmarketapp.presentation.mainscreen
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
@@ -20,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +52,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Destination(start = true)
-//@Destination
 @Composable
 fun HomePageScreen(
     navigator: DestinationsNavigator,
@@ -64,6 +65,10 @@ fun HomePageScreen(
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
 
+    // 获取屏幕方向
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     LaunchedEffect(Unit) {
         viewModel.loadWatchlist()
         viewModel.loadNasdaqData()
@@ -75,173 +80,285 @@ fun HomePageScreen(
             BottomNavigationBar(navigator = navigator)
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
-            // 标题栏
-            item {
-                Floating(
-                    title = "StockEasy",
-                    onSearchClick = {
-                        navigator.navigate(CompanyListingsScreenDestination)
-                    }
-                )
-            }
-
-            // 公司名称
-            item {
-                Text(
-                    text = "TESLA",
-                    style = MaterialTheme.typography.body2.copy(
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium,
-                        fontStyle = FontStyle.Italic,
-                        color = if (isSystemInDarkTheme()) Color.White else Color.Black
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
-
-
-            // 图表
-            item {
-                when (intradayData) {
-                    is Resource.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
+        if (isPortrait) {
+            // 竖屏模式下
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp)
+            ) {
+                // 标题栏
+                item {
+                    Floating(
+                        title = "StockEasy",
+                        onSearchClick = {
+                            navigator.navigate(CompanyListingsScreenDestination)
                         }
-                    }
-                    is Resource.Success -> {
-                        val data = (intradayData as Resource.Success<List<IntradayInfo>>).data.orEmpty()
-                        if (data.isNotEmpty()) {
-                            StockChart(
-                                infos = data,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                            )
-                        } else {
-                            Text(
-                                text = "No data available for Nasdaq",
-                                color = Color.Red,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                    is Resource.Error -> {
-                        Text(
-                            text = "Failed to load Nasdaq data",
-                            color = Color.Red,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    )
                 }
-            }
 
+                // 公司名称 "TESLA"
+                item {
+                    Text(
+                        text = "TESLA",
+                        style = MaterialTheme.typography.body2.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontStyle = FontStyle.Italic,
+                            color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
 
+                // 图表
+                item {
+                    IntradayChartSection(intradayData = intradayData)
+                }
 
-            // 搜索结果或观察列表标题
-            item {
-                Text(
-                    text = if (searchQuery.isBlank()) "Watchlist" else "Search Results",
-                    style = MaterialTheme.typography.body2.copy(
-                        fontSize = 20.sp, // 增大字体大小
-                        fontWeight = FontWeight.Medium,
-                        fontStyle = FontStyle.Italic,
-                        color = if (isSystemInDarkTheme()) Color.White else Color.Black
-                    ),
-                    modifier = Modifier.padding(vertical = 16.dp)
-                )
-            }
+                // 列表标题
+                item {
+                    Text(
+                        text = if (searchQuery.isBlank()) "Watchlist" else "Search Results",
+                        style = MaterialTheme.typography.body2.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontStyle = FontStyle.Italic,
+                            color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                        ),
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                }
 
-            // 公司列表
-            items(
-                items = (watchlist as? Resource.Success<List<CompanyListing>>)?.data.orEmpty().let { companies ->
-                    if (searchQuery.isBlank()) {
-                        companies
-                    } else {
-                        companies.filter {
-                            it.name.contains(searchQuery, ignoreCase = true) ||
-                                    it.symbol.contains(searchQuery, ignoreCase = true)
+                // 公司列表
+                items(
+                    items = (watchlist as? Resource.Success<List<CompanyListing>>)?.data.orEmpty().let { companies ->
+                        if (searchQuery.isBlank()) {
+                            companies
+                        } else {
+                            companies.filter {
+                                it.name.contains(searchQuery, ignoreCase = true) ||
+                                        it.symbol.contains(searchQuery, ignoreCase = true)
+                            }
                         }
-                    }
-                },
-                key = { company -> company.symbol }
-            ) { company ->
-                val dismissState = rememberDismissState(
-                    confirmStateChange = {
-                        if (it == DismissValue.DismissedToEnd) {
+                    },
+                    key = { company -> company.symbol }
+                ) { company ->
+                    CompanySwipeToDismissItem(
+                        company = company,
+                        onCompanyRemoved = {
                             scope.launch {
                                 viewModel.removeFromWatchlist(company.symbol)
                                 viewModel.loadWatchlist()
                                 scaffoldState.snackbarHostState.showSnackbar("${company.name} removed")
                             }
-                        }
-                        true
-                    }
-                )
-
-                SwipeToDismiss(
-                    state = dismissState,
-                    background = {
-                        val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
-                        val alignment = if (direction == DismissDirection.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
-                        val color by animateColorAsState(
-                            targetValue = if (dismissState.targetValue == DismissValue.Default) Color.Gray else Color.Red
-                        )
-                        val scale by animateFloatAsState(
-                            targetValue = if (dismissState.targetValue == DismissValue.Default) 0.75f else 1f
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(color)
-                                .padding(horizontal = 20.dp),
-                            contentAlignment = alignment
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete",
-                                tint = Color.White,
-                                modifier = Modifier.scale(scale)
+                        },
+                        onClick = {
+                            navigator.navigate(
+                                CompanyInfoScreenDestination(company.symbol)
                             )
                         }
-                    },
-                    directions = setOf(DismissDirection.StartToEnd)
-                ) {
-                    Column {
-                        CompanyItem(
-                            company = company,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navigator.navigate(
-                                        CompanyInfoScreenDestination(company.symbol)
-                                    )
-                                }
-                                .padding(vertical = 8.dp)
-                        )
-                        Divider()
-                    }
+                    )
                 }
             }
+        } else {
+            // 横屏模式下
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                // 左侧列表区（不再包含 "TESLA" 标题）
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                ) {
+                    item {
+                        Floating(
+                            title = "StockEasy",
+                            onSearchClick = {
+                                navigator.navigate(CompanyListingsScreenDestination)
+                            }
+                        )
+                    }
+
+                    // 列表标题
+                    item {
+                        Text(
+                            text = if (searchQuery.isBlank()) "Watchlist" else "Search Results",
+                            style = MaterialTheme.typography.body2.copy(
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Medium,
+                                fontStyle = FontStyle.Italic,
+                                color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                            ),
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    }
+
+                    // 公司列表
+                    items(
+                        items = (watchlist as? Resource.Success<List<CompanyListing>>)?.data.orEmpty().let { companies ->
+                            if (searchQuery.isBlank()) {
+                                companies
+                            } else {
+                                companies.filter {
+                                    it.name.contains(searchQuery, ignoreCase = true) ||
+                                            it.symbol.contains(searchQuery, ignoreCase = true)
+                                }
+                            }
+                        },
+                        key = { company -> company.symbol }
+                    ) { company ->
+                        CompanySwipeToDismissItem(
+                            company = company,
+                            onCompanyRemoved = {
+                                scope.launch {
+                                    viewModel.removeFromWatchlist(company.symbol)
+                                    viewModel.loadWatchlist()
+                                    scaffoldState.snackbarHostState.showSnackbar("${company.name} removed")
+                                }
+                            },
+                            onClick = {
+                                navigator.navigate(
+                                    CompanyInfoScreenDestination(company.symbol)
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // 右侧图表区和 "TESLA" 标题
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                ) {
+                    // 将 "TESLA" 标题移动到右侧上方
+                    Text(
+                        text = "TESLA",
+                        style = MaterialTheme.typography.body2.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            fontStyle = FontStyle.Italic,
+                            color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    // 图表区域
+                    IntradayChartSection(intradayData = intradayData)
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun IntradayChartSection(intradayData: Resource<List<IntradayInfo>>) {
+    when (intradayData) {
+        is Resource.Loading -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is Resource.Success -> {
+            val data = (intradayData as Resource.Success<List<IntradayInfo>>).data.orEmpty()
+            if (data.isNotEmpty()) {
+                StockChart(
+                    infos = data,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+            } else {
+                Text(
+                    text = "No data available for Nasdaq",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        is Resource.Error -> {
+            Text(
+                text = "Failed to load Nasdaq data",
+                color = Color.Red,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun CompanySwipeToDismissItem(
+    company: CompanyListing,
+    onCompanyRemoved: () -> Unit,
+    onClick: () -> Unit
+) {
+    val dismissState = rememberDismissState(
+        confirmStateChange = {
+            if (it == DismissValue.DismissedToEnd) {
+                onCompanyRemoved()
+            }
+            true
+        }
+    )
+
+    SwipeToDismiss(
+        state = dismissState,
+        background = {
+            val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
+            val alignment = if (direction == DismissDirection.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+            val color by animateColorAsState(
+                targetValue = if (dismissState.targetValue == DismissValue.Default) Color.Gray else Color.Red
+            )
+            val scale by animateFloatAsState(
+                targetValue = if (dismissState.targetValue == DismissValue.Default) 0.75f else 1f
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = alignment
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = Color.White,
+                    modifier = Modifier.scale(scale)
+                )
+            }
+        },
+        directions = setOf(DismissDirection.StartToEnd)
+    ) {
+        Column {
+            CompanyItem(
+                company = company,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick() }
+                    .padding(vertical = 8.dp)
+            )
+            Divider()
         }
     }
 }
@@ -252,38 +369,32 @@ fun Floating(
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 判断系统是否处于深色主题
     val isDarkTheme = isSystemInDarkTheme()
 
     TopAppBar(
-        backgroundColor = Color.Transparent, // 透明背景实现浮动效果
-        elevation = 0.dp, // 无阴影
-        modifier = modifier
-            .fillMaxWidth()
+        backgroundColor = Color.Transparent,
+        elevation = 0.dp,
+        modifier = modifier.fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // 标题文本，居中对齐
+        Box(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = title,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
                 fontStyle = FontStyle.Italic,
                 letterSpacing = 1.2.sp,
-                fontSize = 28.sp, // 调整字体大小
+                fontSize = 28.sp,
                 color = if (isDarkTheme) Color.White else Color.Black,
                 modifier = Modifier.align(Alignment.Center),
                 textAlign = TextAlign.Center
             )
-            // 搜索图标，对齐到右侧
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search",
                 modifier = Modifier
                     .size(24.dp)
                     .align(Alignment.CenterEnd)
-                    .clickable { onSearchClick() }, // 点击事件回调
+                    .clickable { onSearchClick() },
                 tint = MaterialTheme.colors.primary
             )
         }
