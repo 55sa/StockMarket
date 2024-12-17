@@ -1,97 +1,175 @@
-# Stock Market App
+# 📊 **StockEasy**: Real-Time Stock Market Analysis App
 
-A comprehensive stock market analysis app built with Jetpack Compose, Hilt, Room, Retrofit, and more. This app provides features like real-time stock data visualization, watchlist management, and insights generation using GPT-3.5 for trading analysis.
+A powerful **stock market analysis** app built with **Jetpack Compose**, **Hilt**, and **Retrofit**. **StockEasy** provides real-time data visualization, watchlist management, and cutting-edge AI-driven trading insights, empowering users to make data-driven investment decisions.
 
-## Features
+---
 
-- **Real-Time Stock Data**: Fetch and display intraday, weekly, and monthly stock data with detailed insights.
-- **Watchlist Management**: Add, remove, and view companies in your personalized watchlist.
-- **Company Listings**: Search and filter companies from a database of stock listings.
-- **Trading Analysis**: Leverage OpenAI's GPT-3.5 to analyze intraday trading data and provide insights.
-- **Offline Support**: Caches data locally using Room Database for smooth offline access.
-- **User Authentication**: Manage user authentication using Firebase.
-- **Modern UI**: Built with Jetpack Compose for a clean and responsive UI.
-- **Navigation**: Uses Compose Destinations for structured and type-safe navigation.
+## 🌟 **Key Features**
 
-## Tech Stack
+### 🔹 **Real-Time Stock Data**
+- Fetch intraday, weekly, and monthly stock data using the **Alpha Vantage API**.
+- Visualize data through interactive **charts** with smooth animations.
 
-### Frontend
-- **Kotlin**: The language for all app development.
-- **Jetpack Compose**: For building a responsive and modern UI.
-- **Compose Destinations**: Simplifies navigation in a strongly typed way.
-- **Accompanist**: Adds utility components like swipe refresh.
-- **ComposeChart**: https://github.com/ehsannarmani/ComposeCharts
+### 🔹 **Watchlist Management**
+- Create a personalized watchlist to monitor your favorite stocks.
+- Add or remove companies with a single tap.
 
-### Backend
-- **Room**: Local database for caching stock data.
-- **Retrofit**: Networking library to fetch stock data from Alpha Vantage API.
-- **OkHttp**: HTTP client for streaming and networking tasks.
-- **Firebase**: For authentication and user data storage.
+### 🔹 **Company Listings**
+- Search and filter from a comprehensive **Nasdaq stock database**.
+- Access detailed company information, including sector, industry, and performance metrics.
 
-### Dependency Injection
-- **Hilt**: For dependency injection and modular app architecture.
+### 🔹 **AI-Powered Trading Insights**
+- Leverage **OpenAI GPT-3.5** to analyze trading data and generate actionable insights.
+- Identify trends, active trading periods, and opportunities based on historical data.
 
-### Parsing
-- **OpenCSV**: Parses CSV data from APIs for stock information.
+### 🔹 **User Behavior Analysis**
+- Weekly analysis of trading activity: **total trades**, **sector performance**, and most traded stocks.
+- Detailed breakdown of **buying** and **selling patterns**.
 
-### AI Integration
-- **OpenAI GPT-3.5**: Provides trading insights by analyzing intraday stock data.
+### 🔹 **Offline Support**
+- Seamlessly cache stock data using **Room Database** for offline access.
 
-## IMPORTANT!!
-You have  to go your local.properties file add your GPT API KEYS:
+### 🔹 **Secure User Authentication**
+- Manage user accounts securely with **Firebase Authentication**.
 
-OPENAI_API_KEY = yourapikey
+---
 
-More Info:
-https://openai.com/index/openai-api/
+## 🛠️ **Tech Stack**
 
+### **Frontend**
+- **Kotlin**: Core development language.
+- **Jetpack Compose**: Modern UI toolkit for a clean, responsive interface.
+- **Compose Destinations**: Type-safe and structured navigation.
+- **Accompanist**: Enhances UI capabilities like swipe refresh and animations.
+- **ComposeChart**: Elegant chart visualizations for trading data.
 
-## ScreenShot
+### **Backend**
+- **Retrofit**: Networking library for seamless API integrations.
+- **OkHttp**: Handles HTTP requests for stock data streaming.
+- **Room Database**: Local storage for caching and offline support.
 
-### Main Screen
-<img src="ScreenShot/MainScreen.png" alt="MainScreen" width="300"/>
+### **AI Integration**
+- **OpenAI GPT-3.5**: Generates actionable trading insights and weekly summaries.
 
-### Search Screen
-<img src="ScreenShot/Search.png" alt="Search" width="300"/>
+### **Other Tools**
+- **Hilt**: Dependency injection for clean and modular architecture.
+- **OpenCSV**: Parses and processes large CSV datasets.
 
-### Company Details 1
-<img src="ScreenShot/Company1.png" alt="Company1" width="300"/>
+---
 
-### Company Details 2
-<img src="ScreenShot/Company2.png" alt="Company2" width="300"/>
+## 💻 **Screenshots**
 
-### Analysis Screen 1
-<img src="ScreenShot/analysis1.png" alt="Analysis1" width="300"/>
+### **Main Screen**
+<img src="ScreenShot/MainScreen.png" alt="Main Screen" width="300"/>
 
-### Analysis Screen 2
-<img src="ScreenShot/analysis2.png" alt="Analysis2" width="300"/>
+### **Trading Insights**
+<img src="ScreenShot/analysis1.png" alt="AI Insights" width="300"/>  
+<img src="ScreenShot/analysis2.png" alt="Analysis 2" width="300"/>  
 
-### Analysis Screen 3
-<img src="ScreenShot/analysis3.png" alt="Analysis3" width="300"/>
+### **Company Search**
+<img src="ScreenShot/Search.png" alt="Search" width="300"/>  
 
-### Login Screen 1
-<img src="ScreenShot/login1.png" alt="Login1" width="300"/>
+### **Login Page**
+<img src="ScreenShot/login1.png" alt="Login" width="300"/>  
 
-### Login Screen 2
-<img src="ScreenShot/login2.png" alt="Login2" width="300"/>
+---
 
+## 🚀 **How It Works**
 
-## TODO
+1. **Stock Data Fetching**:  
+   - Real-time stock data is fetched using **Alpha Vantage** API.
+   - Data is parsed with **OpenCSV** and stored locally using **Room**.
 
-1. **Weekly AI Summaries**: 
-   - Automatically generate a **well-formatted weekly trading report** using AI. 
-   - The app will aggregate all analysis data and send it to GPT-3.5, which will generate the report.
-   - The report will be stored in the user's profile and users will receive a **notification** to view the report. 
-   - Upon clicking the notification, users will be directed to the report stored in their profile.
+2. **AI Insights Generation**:  
+   - Trading data is analyzed for patterns (active times, most traded stocks).
+   - Summaries and trading suggestions are generated using **GPT-3.5**.
 
-2. **Robinhood Authentication**: 
-   - Currently, Robinhood authentication is **not implemented**. Firebase has been used to simulate the Robinhood API during development.
-   - In the future, the app will integrate real **Robinhood API authentication** to allow users to log in using their Robinhood account credentials.
-   - Once authenticated, the app will fetch and analyze real-time user portfolio data from Robinhood.
+3. **User Authentication**:  
+   - Firebase Authentication ensures secure login and user data management.
 
-3. **Enhanced Data Analysis and Risk Management**:
-   - Expand the analysis scope to include **comprehensive statistical analysis** of stock data.
-   - Provide **asset allocation analysis** and **risk warnings** to help users better manage their investments.
-   - Introduce visualizations and insights to guide users in identifying portfolio risks and opportunities.
+---
 
+## 📋 **Upcoming Features**
 
+### ✅ **Weekly AI Summaries**
+- Generate automated weekly reports using AI.  
+- Users will receive notifications and access reports from their profile.
+
+### ✅ **Robinhood Integration**
+- Integrate real **Robinhood API** to fetch user portfolios.  
+- Analyze real-time portfolio performance.
+
+### ✅ **Enhanced Risk Management**
+- Statistical risk analysis with visual insights.  
+- Introduce tools for **asset allocation analysis** and **risk warnings**.
+
+---
+
+## 🔑 **Setup Instructions**
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/your-repo-url
+   cd stock-market-app
+   ```
+
+2. Add your API keys in the `local.properties` file:
+   ```properties
+   OPENAI_API_KEY=your_openai_api_key
+   ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
+   ```
+
+3. Build and run the app:
+   - Ensure **Android Studio** (Arctic Fox or newer) is installed.
+   - Open the project and sync dependencies.
+
+4. Configure Firebase Authentication:
+   - Follow the [Firebase setup guide](https://firebase.google.com/docs/auth) and connect your Firebase project.
+
+---
+
+## ⚙️ **Dependencies**
+
+Add these dependencies in your `build.gradle`:
+
+```gradle
+dependencies {
+    implementation "androidx.compose.ui:ui:1.5.0"
+    implementation "com.google.dagger:hilt-android:2.44"
+    implementation "com.squareup.retrofit2:retrofit:2.9.0"
+    implementation "com.google.firebase:firebase-auth:21.0.1"
+    implementation "io.github.ehsannarmani:composecharts:1.0.0"
+    implementation "com.opencsv:opencsv:5.5.2"
+}
+```
+
+---
+
+## 🧪 **Testing**
+
+- Unit testing for data parsing and AI analysis.
+- UI testing for Compose components using **Compose Test Rules**.
+
+---
+
+## 👨‍💻 **Contributors**
+
+- **Your Team Name**  
+  - Developers: Jiahao, Jiahe (Herbert), Charlie  
+  - Designers: Jiahe, Jiahao
+
+---
+
+## 📜 **License**
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## 📩 **Contact**
+
+For inquiries, feature requests, or collaborations:  
+**Email**: hzjh@bu.edu 
+**Website**: In progress
+
+---
