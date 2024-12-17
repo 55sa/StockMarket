@@ -76,5 +76,22 @@ https://openai.com/index/openai-api/
 <img src="ScreenShot/login2.png" alt="Login2" width="300"/>
 
 
+## TODO
+
+1. **Weekly AI Summaries**: 
+   - Automatically generate a **well-formatted weekly trading report** using AI. 
+   - The app will aggregate all analysis data and send it to GPT-3.5, which will generate the report.
+   - The report will be stored in the user's profile and users will receive a **notification** to view the report. 
+   - Upon clicking the notification, users will be directed to the report stored in their profile.
+
+2. **Robinhood Authentication**: 
+   - Currently, Robinhood authentication is **not implemented**. Firebase has been used to simulate the Robinhood API during development.
+   - In the future, the app will integrate real **Robinhood API authentication** to allow users to log in using their Robinhood account credentials.
+   - Once authenticated, the app will fetch and analyze real-time user portfolio data from Robinhood.
+
+3. **Enhanced Data Analysis and Risk Management**:
+   - Expand the analysis scope to include **comprehensive statistical analysis** of stock data.
+   - Provide **asset allocation analysis** and **risk warnings** to help users better manage their investments.
+   - Introduce visualizations and insights to guide users in identifying portfolio risks and opportunities.
 
 
