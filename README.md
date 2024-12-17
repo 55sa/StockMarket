@@ -121,16 +121,12 @@ A powerful **stock market analysis** app built with **Jetpack Compose**, **Hilt*
 
 ## 🔑 **Setup Instructions**
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/your-repo-url
-   cd stock-market-app
-   ```
+1. Clone this repository
+
 
 2. Add your API keys in the `local.properties` file:
    ```properties
    OPENAI_API_KEY=your_openai_api_key
-   ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
    ```
 
 3. Build and run the app:
@@ -148,12 +144,60 @@ Add these dependencies in your `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation "androidx.compose.ui:ui:1.5.0"
-    implementation "com.google.dagger:hilt-android:2.44"
-    implementation "com.squareup.retrofit2:retrofit:2.9.0"
-    implementation "com.google.firebase:firebase-auth:21.0.1"
-    implementation "io.github.ehsannarmani:composecharts:1.0.0"
-    implementation "com.opencsv:opencsv:5.5.2"
+    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+
+    implementation("androidx.core:core-ktx:1.7.0")
+    implementation("androidx.compose.ui:ui:$compose_version")
+    implementation("androidx.compose.material:material:$compose_version")
+    implementation("androidx.compose.ui:ui-tooling-preview:$compose_version")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
+    implementation("androidx.activity:activity-compose:1.6.0")
+    implementation 'androidx.compose.material3:material3-android:1.3.1'
+
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.3")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:$compose_version")
+    debugImplementation("androidx.compose.ui:ui-tooling:$compose_version")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
+
+    implementation("com.opencsv:opencsv:5.5.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.4.1")
+    implementation("androidx.compose.material:material-icons-extended:$compose_version")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.24.2-alpha")
+
+    implementation("io.github.raamcosta.compose-destinations:core:1.1.2-beta")
+    ksp("io.github.raamcosta.compose-destinations:ksp:1.1.2-beta")
+
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt("com.google.dagger:hilt-android-compiler:2.48")
+
+    implementation "androidx.hilt:hilt-navigation-compose:1.0.0"
+    implementation "androidx.navigation:navigation-compose:2.6.0"
+    kapt "com.google.dagger:hilt-android-compiler:2.48"
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0-alpha04'
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.3")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.3")
+
+    implementation("androidx.room:room-runtime:2.5.1")
+    kapt("androidx.room:room-compiler:2.5.1")
+    implementation("androidx.room:room-ktx:2.5.1")
+
+    implementation("io.coil-kt:coil-compose:2.2.2")
+
+    implementation("com.google.android.gms:play-services-auth:19.2.0")
+    implementation("com.google.firebase:firebase-auth-ktx:21.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+    implementation("com.google.firebase:firebase-database:20.0.4")
+
+    implementation("io.github.ehsannarmani:compose-charts:0.1.0")
+
+    implementation "com.google.accompanist:accompanist-systemuicontroller:0.16.1"
+
 }
 ```
 
