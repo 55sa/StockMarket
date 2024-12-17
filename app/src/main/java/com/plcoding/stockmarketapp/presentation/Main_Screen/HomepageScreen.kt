@@ -43,6 +43,8 @@ import com.plcoding.stockmarketapp.presentation.destinations.CompanyInfoScreenDe
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.HomePageScreenDestination
 import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
+import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
+import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 import com.plcoding.stockmarketapp.util.Resource
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -73,6 +75,8 @@ fun HomePageScreen(
         viewModel.loadWatchlist()
         viewModel.loadNasdaqData()
     }
+
+
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -261,6 +265,10 @@ fun HomePageScreen(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradayChartSection(intradayData: Resource<List<IntradayInfo>>) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
+
     when (intradayData) {
         is Resource.Loading -> {
             Box(
@@ -284,7 +292,7 @@ fun IntradayChartSection(intradayData: Resource<List<IntradayInfo>>) {
             } else {
                 Text(
                     text = "No data available for Nasdaq",
-                    color = Color.Red,
+                    color = colorTheme.analysisRed,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
@@ -295,7 +303,7 @@ fun IntradayChartSection(intradayData: Resource<List<IntradayInfo>>) {
         is Resource.Error -> {
             Text(
                 text = "Failed to load Nasdaq data",
-                color = Color.Red,
+                color = colorTheme.analysisRed,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
@@ -320,6 +328,8 @@ fun CompanySwipeToDismissItem(
             true
         }
     )
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
 
     SwipeToDismiss(
         state = dismissState,
@@ -343,7 +353,7 @@ fun CompanySwipeToDismissItem(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = Color.White,
+                    tint = colorTheme.icon,
                     modifier = Modifier.scale(scale)
                 )
             }

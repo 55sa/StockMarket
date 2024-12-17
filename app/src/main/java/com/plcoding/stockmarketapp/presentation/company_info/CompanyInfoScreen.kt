@@ -42,6 +42,8 @@ import com.plcoding.stockmarketapp.domain.model.MonthlyInfo
 import com.plcoding.stockmarketapp.domain.model.WeeklyInfo
 import com.plcoding.stockmarketapp.domain.repository.StockRepository
 import com.plcoding.stockmarketapp.presentation.destinations.CompanyListingsScreenDestination
+import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
+import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -75,6 +77,9 @@ fun StyledIconButton(
 
 @Composable
 fun StockDetailItem(label: String, value: Double) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Column(
         horizontalAlignment = Alignment.Start,
         modifier = Modifier
@@ -85,7 +90,7 @@ fun StockDetailItem(label: String, value: Double) {
             style = MaterialTheme.typography.body1.copy(
                 fontWeight = FontWeight.Medium,
                 fontStyle = FontStyle.Italic,
-                color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -94,7 +99,7 @@ fun StockDetailItem(label: String, value: Double) {
             style = MaterialTheme.typography.body2.copy(
                 fontWeight = FontWeight.Normal,
                 fontStyle = FontStyle.Italic,
-                color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                color = colorTheme.primaryText
             )
         )
     }
@@ -102,10 +107,13 @@ fun StockDetailItem(label: String, value: Double) {
 
 @Composable
 fun IntradayInfoCard(intradayInfo: IntradayInfo) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Card(
         elevation = 4.dp,
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = MaterialTheme.colors.surface,
+        backgroundColor = colorTheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -118,7 +126,7 @@ fun IntradayInfoCard(intradayInfo: IntradayInfo) {
                 style = MaterialTheme.typography.h6.copy(
                     fontWeight = FontWeight.Bold,
                     fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colors.primary
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -143,10 +151,13 @@ fun IntradayInfoCard(intradayInfo: IntradayInfo) {
 
 @Composable
 fun WeeklyInfoCard(weeklyInfo: WeeklyInfo) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Card(
         elevation = 4.dp,
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = MaterialTheme.colors.surface,
+        backgroundColor = colorTheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -159,7 +170,7 @@ fun WeeklyInfoCard(weeklyInfo: WeeklyInfo) {
                 style = MaterialTheme.typography.h6.copy(
                     fontWeight = FontWeight.Bold,
                     fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colors.primary
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -184,10 +195,12 @@ fun WeeklyInfoCard(weeklyInfo: WeeklyInfo) {
 
 @Composable
 fun MonthlyInfoCard(monthlyInfo: MonthlyInfo) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Card(
         elevation = 4.dp,
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = MaterialTheme.colors.surface,
+        backgroundColor = colorTheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -200,7 +213,7 @@ fun MonthlyInfoCard(monthlyInfo: MonthlyInfo) {
                 style = MaterialTheme.typography.h6.copy(
                     fontWeight = FontWeight.Bold,
                     fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colors.primary
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -229,12 +242,14 @@ fun ChartTypeButton(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Surface(
         modifier = Modifier
             .padding(horizontal = 4.dp)
             .height(40.dp)
             .clickable(onClick = onClick),
-        color = if (isSelected) MaterialTheme.colors.primary else MaterialTheme.colors.surface,
+        color = if (isSelected) colorTheme.primaryContainer else colorTheme.surface,
         shape = RoundedCornerShape(20.dp),
         elevation = if (isSelected) 8.dp else 2.dp
     ) {
@@ -286,10 +301,12 @@ fun ChartTypeSelector(
 
 @Composable
 fun CompanyDetailsCard(company: CompanyInfo) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Card(
         elevation = 4.dp,
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = MaterialTheme.colors.surface,
+        backgroundColor = colorTheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -304,7 +321,7 @@ fun CompanyDetailsCard(company: CompanyInfo) {
                     fontFamily = FontFamily.Serif,
                     letterSpacing = 1.2.sp,
                     fontStyle = FontStyle.Italic,
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -313,7 +330,7 @@ fun CompanyDetailsCard(company: CompanyInfo) {
                 style = MaterialTheme.typography.subtitle1.copy(
                     fontStyle = FontStyle.Italic,
                     fontFamily = FontFamily.Monospace,
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -325,7 +342,7 @@ fun CompanyDetailsCard(company: CompanyInfo) {
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Medium,
                     fontStyle = FontStyle.Italic,
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    color = colorTheme.primaryText
                 )
             )
             Text(
@@ -334,7 +351,7 @@ fun CompanyDetailsCard(company: CompanyInfo) {
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Medium,
                     fontStyle = FontStyle.Italic,
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -346,7 +363,7 @@ fun CompanyDetailsCard(company: CompanyInfo) {
                     fontFamily = FontFamily.Serif,
                     lineHeight = 20.sp,
                     fontStyle = FontStyle.Italic,
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                    color = colorTheme.primaryText
                 ),
                 maxLines = 10,
                 overflow = TextOverflow.Ellipsis
@@ -357,20 +374,22 @@ fun CompanyDetailsCard(company: CompanyInfo) {
 
 @Composable
 fun GPTAnalysisCard(gptMessage: String) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Spacer(modifier = Modifier.height(16.dp))
     Text(
         text = "AI Buffett Analysis:",
         style = MaterialTheme.typography.h6.copy(
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Serif,
-            color = MaterialTheme.colors.primary
+            color = colorTheme.primaryText
         )
     )
     Spacer(modifier = Modifier.height(8.dp))
     Card(
         elevation = 4.dp,
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = MaterialTheme.colors.surface,
+        backgroundColor = colorTheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
@@ -378,7 +397,7 @@ fun GPTAnalysisCard(gptMessage: String) {
             style = MaterialTheme.typography.body2.copy(
                 fontWeight = FontWeight.Medium,
                 fontStyle = FontStyle.Italic,
-                color = if (isSystemInDarkTheme()) Color.White else Color.Black
+                color = colorTheme.primaryText
             ),
             modifier = Modifier.padding(16.dp)
         )
@@ -402,6 +421,8 @@ fun ErrorMessage(text: String) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradayChartSection(intradayInfos: List<IntradayInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (intradayInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -409,7 +430,7 @@ fun IntradayChartSection(intradayInfos: List<IntradayInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -426,6 +447,8 @@ fun IntradayChartSection(intradayInfos: List<IntradayInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradayDataSection(intradayInfos: List<IntradayInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (intradayInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -433,7 +456,7 @@ fun IntradayDataSection(intradayInfos: List<IntradayInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -445,6 +468,8 @@ fun IntradayDataSection(intradayInfos: List<IntradayInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WeeklyChartSection(weekInfos: List<WeeklyInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (weekInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -452,7 +477,7 @@ fun WeeklyChartSection(weekInfos: List<WeeklyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -469,6 +494,8 @@ fun WeeklyChartSection(weekInfos: List<WeeklyInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WeeklyDataSection(weekInfos: List<WeeklyInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (weekInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -476,7 +503,7 @@ fun WeeklyDataSection(weekInfos: List<WeeklyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -488,6 +515,8 @@ fun WeeklyDataSection(weekInfos: List<WeeklyInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MonthlyChartSection(monthInfos: List<MonthlyInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (monthInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -495,7 +524,7 @@ fun MonthlyChartSection(monthInfos: List<MonthlyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -512,6 +541,7 @@ fun MonthlyChartSection(monthInfos: List<MonthlyInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MonthlyDataSection(monthInfos: List<MonthlyInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
     if (monthInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -519,7 +549,7 @@ fun MonthlyDataSection(monthInfos: List<MonthlyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -532,14 +562,17 @@ fun MonthlyDataSection(monthInfos: List<MonthlyInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun IntradaySection(intradayInfos: List<IntradayInfo>) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (intradayInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Market Summary",
+            text = "Intraday Summary",
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -557,7 +590,7 @@ fun IntradaySection(intradayInfos: List<IntradayInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -569,6 +602,9 @@ fun IntradaySection(intradayInfos: List<IntradayInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WeeklySection(weekInfos: List<WeeklyInfo>) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (weekInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -576,7 +612,7 @@ fun WeeklySection(weekInfos: List<WeeklyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -594,7 +630,7 @@ fun WeeklySection(weekInfos: List<WeeklyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -606,6 +642,8 @@ fun WeeklySection(weekInfos: List<WeeklyInfo>) {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MonthlySection(monthInfos: List<MonthlyInfo>) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (monthInfos.isNotEmpty()) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -613,7 +651,7 @@ fun MonthlySection(monthInfos: List<MonthlyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -631,7 +669,7 @@ fun MonthlySection(monthInfos: List<MonthlyInfo>) {
             style = MaterialTheme.typography.h6.copy(
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colors.primary
+                color = colorTheme.primaryText
             )
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -648,8 +686,12 @@ fun CompanyInfoScreen(
     navigator: DestinationsNavigator,
     viewModel: CompanyInfoViewModel = hiltViewModel()
 ) {
+
+
     val state = viewModel.state
     var selectedChartType by rememberSaveable { mutableStateOf(ChartType.INTRADAY) }
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     LaunchedEffect(Unit) {
         viewModel.checkIfInWatchlist(symbol)
@@ -661,7 +703,7 @@ fun CompanyInfoScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colors.background)
+            .background(colorTheme.screenBackgroundColor)
     ) {
         if (state.error == null) {
             if (isPortrait) {
@@ -771,6 +813,8 @@ fun TopActionRow(
     navigator: DestinationsNavigator,
     viewModel: CompanyInfoViewModel
 ) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -783,8 +827,8 @@ fun TopActionRow(
             icon = Icons.Default.ArrowBack,
             contentDescription = "Back",
             onClick = { navigator.popBackStack() },
-            backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
-            iconTint = MaterialTheme.colors.primary
+            backgroundColor = colorTheme.primaryItem.copy(alpha = 0.1f),
+            iconTint = colorTheme.primaryItem
         )
 
         // 添加到观察列表按钮或已在观察列表的确认图标
@@ -793,16 +837,16 @@ fun TopActionRow(
                 icon = Icons.Default.Add,
                 contentDescription = "Add to Watchlist",
                 onClick = { viewModel.addToWatchList(symbol) },
-                backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colors.primary
+                backgroundColor = colorTheme.primaryItem.copy(alpha = 0.1f),
+                iconTint = colorTheme.primaryItem
             )
         } else {
             StyledIconButton(
                 icon = Icons.Default.Check,
                 contentDescription = "In Watchlist",
                 onClick = { /* 点击反馈逻辑 */ },
-                backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.1f),
-                iconTint = MaterialTheme.colors.secondary
+                backgroundColor = colorTheme.secondaryItem.copy(alpha = 0.1f),
+                iconTint = colorTheme.secondaryItem
             )
         }
     }

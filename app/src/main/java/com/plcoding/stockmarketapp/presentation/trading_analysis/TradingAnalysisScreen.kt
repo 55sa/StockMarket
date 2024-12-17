@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 
@@ -25,6 +26,8 @@ import com.plcoding.stockmarketapp.presentation.Login.AuthViewModel
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
 import com.plcoding.stockmarketapp.presentation.Main_Screen.FloatingTitle
 import com.plcoding.stockmarketapp.presentation.destinations.LoginAndSignUpScreenDestination
+import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
+import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -38,6 +41,7 @@ fun TradingAnalysisScreen(
     // 收集认证状态
     val authState by authViewModel.state.collectAsState()
     val scaffoldState = rememberScaffoldState()
+    val themcolor = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     if (!authState.isLoggedIn) {
         Scaffold(
@@ -68,7 +72,11 @@ fun TradingAnalysisScreen(
 
                     )
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(onClick = { navigator.navigate(LoginAndSignUpScreenDestination) }) {
+                    Button(colors = ButtonDefaults.buttonColors(
+                        backgroundColor = themcolor.primaryItem,         // 修改按钮背景色
+                        contentColor = themcolor.primaryText           // 修改按钮文字颜色（可选）
+                    ),
+                        onClick = { navigator.navigate(LoginAndSignUpScreenDestination) }) {
                         Text("Login")
                     }
                 }

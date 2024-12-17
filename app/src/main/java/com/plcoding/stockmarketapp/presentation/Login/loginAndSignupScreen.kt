@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +45,8 @@ import com.plcoding.stockmarketapp.R
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
 import com.plcoding.stockmarketapp.presentation.Main_Screen.FloatingTitle
 import com.plcoding.stockmarketapp.presentation.trading_analysis.TradingAnalysisViewModel
+import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
+import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
@@ -119,14 +122,16 @@ fun LoginAndSignUpScreen(
 
 @Composable
 fun GoogleSignInButton(onClick: () -> Unit) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = MaterialTheme.colors.surface,
-            contentColor = MaterialTheme.colors.onSurface
+            backgroundColor = colorTheme.surface,
+            contentColor = colorTheme.primaryText
         ),
         border = BorderStroke(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.5f)),
         shape = RoundedCornerShape(12.dp)
@@ -151,7 +156,7 @@ fun GoogleSignInButton(onClick: () -> Unit) {
                     fontWeight = FontWeight.Medium,
                     fontStyle = FontStyle.Italic,
                     fontSize = 18.sp,
-                    color = MaterialTheme.colors.onSurface
+                    color = colorTheme.primaryText
                 )
             )
         }
@@ -207,13 +212,15 @@ fun SuccessfulPage(
 
 @Composable
 fun BuyingPowerCard(name: String, total :Double) {
+
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     Card(
         shape = RoundedCornerShape(12.dp),
-        backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f), // 使用主题主色的浅色变体
-        elevation = 4.dp,
+        backgroundColor = colorTheme.primaryContainer.copy(alpha = 0.1f),
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(150.dp).shadow(elevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -226,7 +233,7 @@ fun BuyingPowerCard(name: String, total :Double) {
                 text = "Total Net Worth",
                 style = MaterialTheme.typography.h6.copy(
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colors.onSurface
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -234,7 +241,7 @@ fun BuyingPowerCard(name: String, total :Double) {
                 text = "$${"%.2f".format(total)}",
                 style = MaterialTheme.typography.h4.copy(
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colors.onSurface
+                    color = colorTheme.primaryText
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -245,7 +252,7 @@ fun BuyingPowerCard(name: String, total :Double) {
                 Text(
                     text = name,
                     style = MaterialTheme.typography.body2.copy(
-                        color = MaterialTheme.colors.onSurface
+                        color = colorTheme.secondaryText
                     ),
                     textAlign = TextAlign.Start
                 )
@@ -262,13 +269,12 @@ fun SettingItem(
     onClick: () -> Unit,
     textColor: Color = MaterialTheme.colors.onSurface
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
-    val backgroundColor = if (isDarkTheme) Color.Black else Color.White
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     Card(
         shape = RoundedCornerShape(8.dp),
         elevation = 4.dp,
-        backgroundColor = backgroundColor,
+        backgroundColor = colorTheme.surface,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
@@ -282,7 +288,7 @@ fun SettingItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = MaterialTheme.colors.primary,
+                tint = colorTheme.icon,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))

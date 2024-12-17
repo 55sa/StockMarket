@@ -37,6 +37,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
+import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
+import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.AnimationMode
 import ir.ehsannarmani.compose_charts.models.BarProperties
@@ -59,7 +61,7 @@ fun StockChart(
     infos: List<IntradayInfo>,
     modifier: Modifier = Modifier
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     val sortedInfos = infos.sortedBy { it.date }
     val closeValues = sortedInfos.map { it.close }
@@ -71,15 +73,11 @@ fun StockChart(
     val dateLabels2 = sortedInfos.map { it.date.format(dateFormatter2) }
 
     // Define text color based on theme
-    val textColor = if (isDarkTheme) {
-        Color.Green // Dark theme
-    } else {
-        Color.Black // Light theme
-    }
+    val textColor = colorTheme.primaryText
 
     // Define label text style
     val labelTextStyle = TextStyle(
-        color = if (isDarkTheme) Color.Green else Color.Black, // Dynamic color based on theme
+        color = colorTheme.primaryText, // Dynamic color based on theme
         fontSize = 14.sp,                                      // Increased font size
         fontWeight = FontWeight.Medium,                        // Enhanced font weight
         fontStyle = FontStyle.Italic,                          // Set font style to Italic
@@ -91,9 +89,9 @@ fun StockChart(
 
     // Determine line color based on price movement
     val lineColor = if (closeValues.isNotEmpty() && closeValues.last() > closeValues.first()) {
-        Color.Green // Price increased
+        colorTheme.analysisGreen // Price increased
     } else {
-        Color.Red // Price decreased
+        colorTheme.analysisRed // Price decreased
     }
 
     // Define Y-axis max and min

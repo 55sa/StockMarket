@@ -123,5 +123,10 @@ dependencies {
 
     implementation("io.github.ehsannarmani:compose-charts:0.1.0")
 
+    implementation "com.google.accompanist:accompanist-systemuicontroller:0.16.1"
+
+
+
+
 
 }

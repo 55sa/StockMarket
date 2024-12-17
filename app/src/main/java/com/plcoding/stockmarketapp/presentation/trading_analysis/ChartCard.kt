@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,6 +59,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.times
 import com.plcoding.stockmarketapp.ui.theme.DarkThemeColors
 import com.plcoding.stockmarketapp.ui.theme.LightThemeColors
+
+
 
 sealed class ChartType {
     data class Line(val data: List<Map<String, Double>>, val labels: List<String>) : ChartType()
@@ -83,7 +86,21 @@ data class AnnotatedText(
     val highlighted3: String? = null
 )
 
+@Composable
+fun LoadingPlaceHolder(color: Color, circleColor: Color){
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            color = circleColor,
+            strokeWidth = 4.dp
+        )
+    }
+}
 @Composable
 fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
@@ -286,7 +303,6 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
         // Display App name don't matter
 
 
-
         LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -345,7 +361,6 @@ fun AnalysisAndChartGroup(
             .fillMaxWidth()
             .padding(16.dp)
             .shadow(8.dp, RoundedCornerShape(16.dp))
-//            .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
             .background(colorTheme.background, shape = RoundedCornerShape(16.dp))
 
     ) {
@@ -404,7 +419,7 @@ fun AnalysisAndChartGroup(
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp, horizontal = 8.dp)
                                 .shadow(4.dp, RoundedCornerShape(12.dp)) // 添加阴影和圆角
-                                .background(colorTheme.cardBackground, shape = RoundedCornerShape(12.dp)) // 设置背景颜色和圆角
+                                .background(colorTheme.secondaryContainer, shape = RoundedCornerShape(12.dp)) // 设置背景颜色和圆角
                                 .padding(16.dp) // 内部内容的间距
                         ) {
                             Column {
@@ -486,7 +501,7 @@ fun AnalysisAndChartGroup(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp, horizontal = 8.dp)
                         .shadow(4.dp, RoundedCornerShape(12.dp))
-                        .background(colorTheme.cardBackground, shape = RoundedCornerShape(12.dp))
+                        .background(colorTheme.secondaryContainer, shape = RoundedCornerShape(12.dp))
                         .padding(16.dp)
                 ) {
                     Column {
@@ -582,7 +597,7 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                 }.padding(16.dp).shadow(15.dp, RoundedCornerShape(25.dp))
             ,
             colors = CardDefaults.cardColors(
-                containerColor = colorTheme.cardBackground, // 使用主题卡片背景
+                containerColor = colorTheme.secondaryContainer, // 使用主题卡片背景
                 contentColor = colorTheme.primaryText
             )
         ) {
@@ -644,9 +659,12 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                                 },
                                 modifier = Modifier.size(32.dp), // Adjust the size of the Switch
                                 colors = androidx.compose.material3.SwitchDefaults.colors(
-                                    checkedThumbColor = Color(0xFF3AB3E8),
-                                    uncheckedThumbColor = Color.Gray
-                                )
+                                    checkedThumbColor = Color(0xFF6F5C0D),
+                                    uncheckedThumbColor = Color.Gray,
+                                    checkedTrackColor = Color(0xFFFDFDFD),
+                                    checkedBorderColor = Color(0xFF1E1B13),
+
+                                    )
                             )
                         }
                     }
@@ -677,7 +695,8 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
     val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.secondaryContainer, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -703,7 +722,8 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
         .maxOrNull() ?: 0.0 // Default to 0.0 if no data
 
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.secondaryContainer, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -720,7 +740,7 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
     }
 
     val labelTextStyle = TextStyle(
-        color =  colorTheme.primaryText, // Dynamic color based on theme
+        color = colorTheme.primaryText, // Dynamic color based on theme
         fontSize = 14.sp,                                      // Increased font size
         fontWeight = FontWeight.Medium,                        // Enhanced font weight
         fontStyle = FontStyle.Italic,                          // Set font style to Italic
@@ -799,21 +819,14 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
 
 @Composable
 fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isToggled: Boolean = false) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = Color.Gray)
+        LoadingPlaceHolder(colorTheme.secondaryContainer, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = Color.Gray)
         return
     }
-    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
-    val labelTextStyle = TextStyle(
-        color =  colorTheme.primaryText, // Dynamic color based on theme
-        fontSize = 14.sp,                                      // Increased font size
-        fontWeight = FontWeight.Medium,                        // Enhanced font weight
-        fontStyle = FontStyle.Italic,                          // Set font style to Italic
-        letterSpacing = 0.5.sp,                                // Increased letter spacing
-        lineHeight = 20.sp,                                    // Adjusted line height
-        fontFamily = FontFamily.SansSerif
 
-    )
 
     // Combine all unique keys from datasets to create a unified x-axis
     val chartData = if (isToggled) {
@@ -839,7 +852,8 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.secondaryContainer, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -883,7 +897,10 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
         ),
         labelProperties = LabelProperties(
             enabled = true,
-            textStyle = labelTextStyle,
+            textStyle = TextStyle.Default.copy(
+                color = colorTheme.primaryText,
+                fontSize = 10.sp
+            ),
             padding = 5.dp, // Between Chart and label
             rotation = LabelProperties.Rotation(
                 mode = LabelProperties.Rotation.Mode.Force,
@@ -901,22 +918,15 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
 
 @Composable
 fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isToggled: Boolean = false) {
-    if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = Color.Gray)
-        return
-    }
+
     val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
-    val labelTextStyle = TextStyle(
-        color =  colorTheme.primaryText, // Dynamic color based on theme
-        fontSize = 14.sp,                                      // Increased font size
-        fontWeight = FontWeight.Medium,                        // Enhanced font weight
-        fontStyle = FontStyle.Italic,                          // Set font style to Italic
-        letterSpacing = 0.5.sp,                                // Increased letter spacing
-        lineHeight = 20.sp,                                    // Adjusted line height
-        fontFamily = FontFamily.SansSerif
+    if (data.isEmpty() || labels.isEmpty()) {
+        LoadingPlaceHolder(colorTheme.secondaryContainer, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = Color.Gray)
+        return
+    }
 
-    )
     // Combine all unique keys from datasets to create a unified x-axis
     val chartData = data.flatMap { it.keys }
         .distinct()
@@ -926,7 +936,8 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.secondaryContainer, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -977,7 +988,10 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
         ),
         labelProperties = LabelProperties(
             enabled = true,
-            textStyle = labelTextStyle,
+            textStyle = TextStyle.Default.copy(
+                color = colorTheme.primaryText,
+                fontSize = 12.sp
+            ),
             padding = 5.dp, // Between Chart and label
             rotation = LabelProperties.Rotation(
                 mode = LabelProperties.Rotation.Mode.Force,
