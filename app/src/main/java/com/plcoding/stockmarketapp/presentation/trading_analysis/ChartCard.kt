@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -83,7 +84,21 @@ data class AnnotatedText(
     val highlighted3: String? = null
 )
 
+@Composable
+fun LoadingPlaceHolder(color: Color, circleColor: Color){
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            color = circleColor,
+            strokeWidth = 4.dp
+        )
+    }
+}
 @Composable
 fun ChartScreen(viewModel: TradingAnalysisViewModel) {
 
@@ -678,6 +693,7 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
     val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     if (data.isEmpty() || labels.isEmpty()) {
+        LoadingPlaceHolder(colorTheme.cardBackground, colorTheme.chartGradientFillColor1)
         Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
@@ -704,7 +720,8 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
         .maxOrNull() ?: 0.0 // Default to 0.0 if no data
 
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.cardBackground, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -800,11 +817,13 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
 
 @Composable
 fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isToggled: Boolean = false) {
+    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
+
     if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = Color.Gray)
+        LoadingPlaceHolder(colorTheme.cardBackground, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = Color.Gray)
         return
     }
-    val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
 
     // Combine all unique keys from datasets to create a unified x-axis
@@ -831,7 +850,8 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.cardBackground, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -896,12 +916,14 @@ fun ColumnChartContent(data: List<Map<String, Double>>, labels: List<String>,isT
 
 @Composable
 fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isToggled: Boolean = false) {
-    if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = Color.Gray)
-        return
-    }
+
     val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
+    if (data.isEmpty() || labels.isEmpty()) {
+        LoadingPlaceHolder(colorTheme.cardBackground, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = Color.Gray)
+        return
+    }
 
     // Combine all unique keys from datasets to create a unified x-axis
     val chartData = data.flatMap { it.keys }
@@ -912,7 +934,8 @@ fun RowChartContent(data: List<Map<String, Double>>, labels: List<String>,isTogg
 
     val maxValue = chartData.flatMap { it.second }.maxOrNull() ?: 0.0
     if (chartData.isEmpty() || maxValue == 0.0) {
-        Text("No data to display", color = colorTheme.secondaryText)
+        LoadingPlaceHolder(colorTheme.cardBackground, colorTheme.chartGradientFillColor1)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
