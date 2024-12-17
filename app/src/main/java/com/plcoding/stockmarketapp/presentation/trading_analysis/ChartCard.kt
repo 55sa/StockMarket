@@ -284,27 +284,6 @@ fun ChartScreen(viewModel: TradingAnalysisViewModel) {
             .background(colorTheme.screenBackgroundColor)
     ) {
         // Display App name don't matter
-        if (!isLargeScreen){
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF1E88E5)) // 蓝色背景
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "StockEasy",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Serif,
-                        fontStyle = FontStyle.Italic,
-                        letterSpacing = 1.2.sp
-                    ),
-//                modifier = Modifier.weight(),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
 
 
         LazyColumn(
@@ -365,7 +344,6 @@ fun AnalysisAndChartGroup(
             .fillMaxWidth()
             .padding(16.dp)
             .shadow(8.dp, RoundedCornerShape(16.dp))
-//            .background(Color(0xFF1C1C2A), shape = RoundedCornerShape(16.dp))
             .background(colorTheme.background, shape = RoundedCornerShape(16.dp))
 
     ) {
@@ -664,8 +642,11 @@ fun SwipableCardComponent(cards: List<Pair<String, ChartType>>,
                                 },
                                 modifier = Modifier.size(32.dp), // Adjust the size of the Switch
                                 colors = androidx.compose.material3.SwitchDefaults.colors(
-                                    checkedThumbColor = Color(0xFF3AB3E8),
-                                    uncheckedThumbColor = Color.Gray
+                                    checkedThumbColor = Color(0xFF6F5C0D),
+                                    uncheckedThumbColor = Color.Gray,
+                                    checkedTrackColor = Color(0xFFFDFDFD),
+                                    checkedBorderColor = Color(0xFF1E1B13),
+
                                 )
                             )
                         }
@@ -697,7 +678,7 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
     val colorTheme = if (isSystemInDarkTheme()) DarkThemeColors else LightThemeColors
 
     if (data.isEmpty() || labels.isEmpty()) {
-        Text("No data available", color = colorTheme.secondaryText)
+        Text("Loading ...", color = colorTheme.secondaryText)
         return
     }
 
@@ -740,7 +721,7 @@ fun LineChartContent(data: List<Map<String, Double>>, labels: List<String>, isTo
     }
 
     val labelTextStyle = TextStyle(
-        color = if (isSystemInDarkTheme()) colorTheme.analysisGreen else Color.Black, // Dynamic color based on theme
+        color = colorTheme.primaryText, // Dynamic color based on theme
         fontSize = 14.sp,                                      // Increased font size
         fontWeight = FontWeight.Medium,                        // Enhanced font weight
         fontStyle = FontStyle.Italic,                          // Set font style to Italic

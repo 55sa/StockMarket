@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.material.Scaffold
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
+import com.plcoding.stockmarketapp.presentation.Main_Screen.FloatingTitle
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -17,6 +18,7 @@ fun TradingAnalysisScreen(navigator: DestinationsNavigator,
 ) {
 
     Scaffold(
+        topBar = { FloatingTitle() },
         bottomBar = {
             BottomNavigationBar(
                 navigator = navigator

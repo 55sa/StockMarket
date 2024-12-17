@@ -30,6 +30,7 @@ import com.plcoding.stockmarketapp.domain.model.CompanyListing
 import com.plcoding.stockmarketapp.domain.model.IntradayInfo
 import com.plcoding.stockmarketapp.presentation.Login.AuthViewModel
 import com.plcoding.stockmarketapp.presentation.Main_Screen.BottomNavigationBar
+import com.plcoding.stockmarketapp.presentation.Main_Screen.FloatingTitle
 
 
 import com.plcoding.stockmarketapp.presentation.Main_Screen.HomeViewModel
@@ -77,6 +78,7 @@ fun HomePageScreen(
 
     Scaffold(
         scaffoldState = scaffoldState,
+        topBar = {FloatingTitle()},
         bottomBar = {
             BottomNavigationBar(navigator = navigator)
         }
