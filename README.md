@@ -59,18 +59,41 @@ A powerful **stock market analysis** app built with **Jetpack Compose**, **Hilt*
 
 ## 💻 **Screenshots**
 
-### **Main Screen**
-<img src="ScreenShot/MainScreen.png" alt="Main Screen" width="300"/>
+![MainScreen](ScreenShot/MainScreen.png)
 
-### **Trading Insights**
-<img src="ScreenShot/analysis1.png" alt="AI Insights" width="300"/>  
-<img src="ScreenShot/analysis2.png" alt="Analysis 2" width="300"/>  
+![Search](ScreenShot/Search.png)
+### Main Screen
+<img src="ScreenShot/MainScreen.png" alt="MainScreen" width="300"/>
 
-### **Company Search**
-<img src="ScreenShot/Search.png" alt="Search" width="300"/>  
+![Company1](ScreenShot/Company1.png)
+### Search Screen
+<img src="ScreenShot/Search.png" alt="Search" width="300"/>
 
-### **Login Page**
-<img src="ScreenShot/login1.png" alt="Login" width="300"/>  
+![Company2](ScreenShot/Company2.png)
+### Company Details 1
+<img src="ScreenShot/Company1.png" alt="Company1" width="300"/>
+
+![Analysis1](ScreenShot/analysis1.png)
+### Company Details 2
+<img src="ScreenShot/Company2.png" alt="Company2" width="300"/>
+
+![Analysis2](ScreenShot/analysis2.png)
+### Analysis Screen 1
+<img src="ScreenShot/analysis1.png" alt="Analysis1" width="300"/>
+
+![Analysis3](ScreenShot/analysis3.png)
+### Analysis Screen 2
+<img src="ScreenShot/analysis2.png" alt="Analysis2" width="300"/>
+
+![Login1](ScreenShot/login1.png)
+### Analysis Screen 3
+<img src="ScreenShot/analysis3.png" alt="Analysis3" width="300"/>
+### Login Screen 1
+<img src="ScreenShot/login1.png" alt="Login1" width="300"/>
+### Login Screen 2
+<img src="ScreenShot/login2.png" alt="Login2" width="300"/>
+
+![Login2](ScreenShot/login2.png)
 
 ---
 
